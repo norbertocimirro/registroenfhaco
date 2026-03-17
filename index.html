@@ -10,10 +10,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .animate-fade { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        select { appearance: none; }
+        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
     </style>
 </head>
 <body>
@@ -22,9 +22,9 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // ==========================================
-        // CONFIGURAÇÃO: COLE A URL DO SEU SCRIPT ABAIXO
-        // ==========================================
+        // =========================================================================
+        // CONFIGURAÇÃO: COLE A URL DO SEU GOOGLE APPS SCRIPT ABAIXO
+        // =========================================================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyHw6wCJGdI1I1NX7kIwqdyW3BLRcIwBVX28HsimrdElZ2EOY82c4p3Kt73XY0n1vsbww/exec"; 
 
         const SECTORS = [
@@ -51,19 +51,20 @@
 
         const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        // Componente de Ícone Interno (SVG) para evitar erros de biblioteca externa
+        // Componente de Ícone Interno (SVG) - Corrigido para maior estabilidade
         const Icon = ({ name, size = 20, className = "" }) => {
             const icons = {
                 plus: <path d="M12 5v14M5 12h14" />,
                 stethoscope: <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.3.3 0 1 0 .2.3M8 15v1a6 6 0 0 0 6 6h2a2 2 0 0 0 2-2v-1.5a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5V21" />,
                 activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
                 users: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 21v-2a4 4 0 0 0-3-3.87" />,
-                alert: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></React.Fragment>,
+                alert: <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></g>,
                 history: <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2" />,
                 logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
                 refresh: <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />,
                 shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
-                clipboard: <React.Fragment><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2-2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></React.Fragment>
+                clipboard: <g><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></g>,
+                calendar: <g><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></g>
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -92,16 +93,16 @@
             });
 
             const fetchSheetData = async () => {
-                if (!GOOGLE_SCRIPT_URL) return;
+                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "") return;
                 setLoading(true);
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL);
                     const data = await response.json();
-                    if (Array.isArray(data)) {
-                        setReports(data.sort((a, b) => b.timestamp - a.timestamp));
+                    if (data && Array.isArray(data)) {
+                        setReports(data.filter(item => item && typeof item === 'object').sort((a, b) => b.timestamp - a.timestamp));
                     }
                 } catch (error) { 
-                    console.error("Erro Fetch:", error); 
+                    console.error("Erro ao carregar dados:", error); 
                 } finally { setLoading(false); }
             };
 
@@ -109,6 +110,7 @@
 
             const handleLogin = (e) => {
                 e.preventDefault();
+                setLoginError('');
                 const input = loginInput.trim().toLowerCase();
                 const nurse = AUTHORIZED_NURSES.find(n => n.toLowerCase() === input);
                 const sector = SECTORS.find(s => s.id.toLowerCase() === input);
@@ -125,7 +127,7 @@
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
-                if (!GOOGLE_SCRIPT_URL) return alert("Erro: URL do Google Script não configurada!");
+                if (!GOOGLE_SCRIPT_URL) return alert("URL da planilha não configurada.");
                 setSubmitting(true);
                 
                 const sector = SECTORS.find(s => s.id === formData.selectedSectorId);
@@ -134,7 +136,7 @@
                     sectorName: sector?.name || '', 
                     sectorType: sector?.type || '', 
                     timestamp: Date.now(), 
-                    authorName: appUser.name 
+                    authorName: appUser?.name || 'Desconhecido' 
                 };
 
                 try {
@@ -151,12 +153,13 @@
                     }, 1500);
                 } catch (error) { 
                     setSubmitting(false);
-                    alert("Erro ao enviar dados.");
+                    alert("Erro ao salvar dados.");
                 }
             };
 
             const filteredAndGrouped = useMemo(() => {
                 const filtered = reports.filter(r => {
+                    if (!r || !r.timestamp) return false;
                     const d = new Date(r.timestamp);
                     const dayMatch = !filterDay || d.getDate() === parseInt(filterDay);
                     const monthMatch = !filterMonth || (d.getMonth() + 1) === parseInt(filterMonth);
@@ -173,7 +176,7 @@
             }, [reports, filterDay, filterMonth, filterYear]);
 
             const availableYears = useMemo(() => {
-                const years = [...new Set(reports.map(r => new Date(r.timestamp).getFullYear()))];
+                const years = [...new Set(reports.map(r => r && r.timestamp ? new Date(r.timestamp).getFullYear() : null))].filter(y => y !== null);
                 return years.sort((a,b) => b-a);
             }, [reports]);
 
@@ -190,14 +193,14 @@
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Usuário</label>
-                                <input type="text" required value={loginInput} onChange={e => setLoginInput(e.target.value)} className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold transition-all" placeholder="Seu Nome ou Setor" />
+                                <input type="text" required value={loginInput} onChange={e => setLoginInput(e.target.value)} className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold" placeholder="Seu Nome ou Setor" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Senha</label>
-                                <input type="password" required value={passInput} onChange={e => setPassInput(e.target.value)} className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold transition-all" placeholder="••••••" />
+                                <input type="password" required value={passInput} onChange={e => setPassInput(e.target.value)} className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold" placeholder="••••••" />
                             </div>
                             {loginError && <p className="text-red-400 text-xs font-bold text-center bg-red-400/10 py-2 rounded-lg">{loginError}</p>}
-                            <button type="submit" className="w-full bg-emerald-600 text-white font-black py-5 rounded-[1.5rem] hover:bg-emerald-500 active:scale-95 transition-all shadow-xl shadow-emerald-900/20">ACESSAR SISTEMA</button>
+                            <button type="submit" className="w-full bg-emerald-600 text-white font-black py-5 rounded-[1.5rem] hover:bg-emerald-500 active:scale-95 transition-all">ACESSAR SISTEMA</button>
                         </form>
                     </div>
                 </div>
@@ -207,15 +210,15 @@
                 <div className="min-h-screen bg-slate-50 pb-32">
                     <header className="bg-slate-900 text-white p-5 shadow-lg sticky top-0 z-20 flex justify-between items-center border-b border-white/5">
                         <div className="flex items-center gap-3">
-                            <div className="bg-emerald-600 p-2 rounded-xl shadow-inner"><Icon name="shield" size={20} /></div>
+                            <div className="bg-emerald-600 p-2 rounded-xl"><Icon name="shield" size={20} /></div>
                             <div>
-                                <h1 className="text-xs font-black uppercase tracking-tight">HACO Integrado</h1>
-                                <p className="text-[9px] text-emerald-400 font-black uppercase tracking-widest leading-none mt-1">{appUser.name}</p>
+                                <h1 className="text-xs font-black uppercase tracking-tight leading-none">HACO Integrado</h1>
+                                <p className="text-[9px] text-emerald-400 font-black uppercase tracking-widest mt-1">{appUser?.name}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
                             <button onClick={fetchSheetData} className={`p-2.5 bg-slate-800 rounded-xl transition-all ${loading ? 'animate-spin opacity-50' : 'active:scale-90'}`}><Icon name="refresh" size={18}/></button>
-                            <button onClick={handleLogout} className="p-2.5 bg-slate-800 hover:bg-red-600 rounded-xl active:scale-90 transition-all"><Icon name="logout" size={18}/></button>
+                            <button onClick={() => setAppUser(null)} className="p-2.5 bg-slate-800 hover:bg-red-600 rounded-xl active:scale-90 transition-all"><Icon name="logout" size={18}/></button>
                         </div>
                     </header>
 
@@ -223,7 +226,7 @@
                         {view === 'dashboard' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade">
                                 {SECTORS.map(s => {
-                                    const latest = reports.find(r => r.sectorId === s.id);
+                                    const latest = reports.find(r => r && r.sectorId === s.id);
                                     const shift = latest ? SHIFTS.find(sh => sh.id === latest.shift) : null;
                                     const sectorIcon = s.id === 'UPI' ? 'stethoscope' : s.id === 'UTI' ? 'activity' : s.id === 'UCC' ? 'users' : 'alert';
                                     
@@ -234,10 +237,10 @@
                                                     <div className="p-4 bg-slate-50 text-slate-700 rounded-2xl"><Icon name={sectorIcon} size={24}/></div>
                                                     <div>
                                                         <h3 className="font-black text-slate-900 text-2xl tracking-tighter leading-none">{s.id}</h3>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">{s.name}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{s.name}</p>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => { setFormData({...formData, selectedSectorId: s.id}); setView('form'); }} className="bg-slate-900 text-white p-3 rounded-2xl shadow-lg active:scale-90 transition-all"><Icon name="plus" size={22}/></button>
+                                                <button onClick={() => { setFormData({...formData, selectedSectorId: s.id}); setView('form'); }} className="bg-slate-900 text-white p-3 rounded-2xl shadow-lg active:scale-90"><Icon name="plus" size={22}/></button>
                                             </div>
                                             {latest ? (
                                                 <div className="space-y-5">
@@ -254,15 +257,14 @@
                                                                 </div>
                                                             ))
                                                         ) : (
-                                                            <div className="col-span-4 bg-slate-50 p-4 rounded-2xl flex justify-between px-6 border border-slate-100/50">
+                                                            <div className="col-span-4 bg-slate-50 p-4 rounded-2xl flex justify-between items-center px-6 border border-slate-100/50">
                                                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Produção Turno</span>
                                                                 <span className="font-black text-emerald-700 text-lg leading-none">{latest.procedures || latest.consultations || 0}</span>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
+                                                    <div className="pt-4 border-t border-slate-50">
                                                         <p className="text-[10px] text-slate-400 font-bold truncate">Resp: <span className="text-slate-600">{latest.nurseName}</span></p>
-                                                        {latest.intercurrences && <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>}
                                                     </div>
                                                 </div>
                                             ) : <div className="py-12 text-center text-slate-200 font-black text-[10px] uppercase tracking-[0.3em] border-2 border-dashed border-slate-50 rounded-[2rem]">Sem registro hoje</div>}
@@ -275,10 +277,10 @@
                         {view === 'form' && (
                             <div className="bg-white rounded-[3rem] p-10 shadow-2xl animate-fade border border-slate-100">
                                 <div className="flex justify-between items-center mb-10">
-                                    <button onClick={() => setView('dashboard')} className="p-3 bg-slate-50 rounded-2xl hover:bg-slate-200 transition-all"><Icon name="refresh" className="rotate-180"/></button>
+                                    <button onClick={() => setView('dashboard')} className="p-3 bg-slate-50 rounded-2xl hover:bg-slate-200"><Icon name="refresh" className="rotate-180"/></button>
                                     <div className="text-right">
                                         <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">{formData.selectedSectorId}</h2>
-                                        <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[0.2em]">Passagem de Turno</p>
+                                        <p className="text-[10px] text-emerald-500 font-black uppercase">Passagem de Turno</p>
                                     </div>
                                 </div>
                                 <form onSubmit={handleSubmit} className="space-y-10">
@@ -297,38 +299,36 @@
                                         </div>
                                     </div>
                                     
-                                    <div className="bg-slate-950 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
-                                        <div className="relative z-10">
-                                            <h3 className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-8 border-l-4 border-emerald-600 pl-4">Censo e Movimentação</h3>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                                {['UPI', 'UTI'].includes(formData.selectedSectorId) ? (
-                                                    ['patients', 'discharges', 'admissions', 'transfers'].map((f, i) => (
-                                                        <div key={f} className="space-y-2 text-center">
-                                                            <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{['Total Pacientes', 'Altas', 'Baixas', 'Transf. Ext'][i]}</label>
-                                                            <input type="number" required value={formData[f]} onChange={e => setFormData({...formData, [f]: e.target.value})} className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-center font-black text-xl outline-none focus:bg-emerald-600/20 transition-all" />
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="col-span-4 space-y-2">
-                                                        <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total de Atendimentos / Procedimentos</label>
-                                                        <input type="number" required value={formData.procedures || formData.consultations} onChange={e => setFormData({...formData, procedures: e.target.value, consultations: e.target.value})} className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-center font-black text-2xl outline-none focus:bg-emerald-600/20 transition-all" />
+                                    <div className="bg-slate-950 p-8 rounded-[2.5rem] text-white shadow-2xl">
+                                        <h3 className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-8 border-l-4 border-emerald-600 pl-4">Censo e Movimentação</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                            {['UPI', 'UTI'].includes(formData.selectedSectorId) ? (
+                                                ['patients', 'discharges', 'admissions', 'transfers'].map((f, i) => (
+                                                    <div key={f} className="space-y-2 text-center">
+                                                        <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{['Total Pacientes', 'Altas', 'Baixas', 'Transf. Ext'][i]}</label>
+                                                        <input type="number" required value={formData[f]} onChange={e => setFormData({...formData, [f]: e.target.value})} className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-center font-black text-xl" />
                                                     </div>
-                                                )}
-                                            </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-4 space-y-2">
+                                                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total de Atendimentos / Procedimentos</label>
+                                                    <input type="number" required value={formData.procedures || formData.consultations} onChange={e => setFormData({...formData, procedures: e.target.value, consultations: e.target.value})} className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-center font-black text-2xl" />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Nomes dos Sargentos Escalados</label>
-                                        <input type="text" required value={formData.sgtsNames} onChange={e => setFormData({...formData, sgtsNames: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-emerald-50" placeholder="Sgt Silva, Sgt Santos..." />
+                                        <input type="text" required value={formData.sgtsNames} onChange={e => setFormData({...formData, sgtsNames: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none" placeholder="Sgt Silva, Sgt Santos..." />
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Intercorrências (Faltas, Atestados, Ocorrências)</label>
-                                        <textarea value={formData.intercurrences} onChange={e => setFormData({...formData, intercurrences: e.target.value})} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] h-40 outline-none font-bold text-sm shadow-inner" placeholder="Relate as novidades do turno..."></textarea>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Intercorrências</label>
+                                        <textarea value={formData.intercurrences} onChange={e => setFormData({...formData, intercurrences: e.target.value})} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] h-40 outline-none font-bold text-sm shadow-inner" placeholder="Relate as novidades..."></textarea>
                                     </div>
 
-                                    <button type="submit" disabled={submitting} className={`w-full ${submitting ? 'bg-slate-400 animate-pulse' : 'bg-emerald-700 hover:bg-emerald-800'} text-white font-black py-7 rounded-[2rem] text-xl italic transition-all shadow-xl shadow-emerald-900/20`}>
+                                    <button type="submit" disabled={submitting} className={`w-full ${submitting ? 'bg-slate-400 animate-pulse' : 'bg-emerald-700 hover:bg-emerald-800'} text-white font-black py-7 rounded-[2rem] text-xl italic shadow-xl shadow-emerald-900/20`}>
                                         {submitting ? 'PROCESSANDO...' : 'ENVIAR PARA PLANILHA'}
                                     </button>
                                 </form>
@@ -340,7 +340,7 @@
                                 <div className="bg-white p-6 rounded-[2.5rem] grid grid-cols-3 gap-3 shadow-sm border border-slate-200">
                                     <select value={filterDay} onChange={e => setFilterDay(e.target.value)} className="bg-slate-50 p-4 rounded-2xl text-xs font-black outline-none border border-slate-100"><option value="">Dia</option>{Array.from({length:31}, (_,i)=><option key={i+1}>{i+1}</option>)}</select>
                                     <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-slate-50 p-4 rounded-2xl text-xs font-black outline-none border border-slate-100"><option value="">Mês</option>{MONTHS.map((m,i)=><option key={i+1} value={i+1}>{m}</option>)}</select>
-                                    <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="bg-slate-50 p-4 rounded-2xl text-xs font-black outline-none border border-slate-100"><option value="">Ano</option>{availableYears.map(y=><option key={y}>{y}</option>)}</select>
+                                    <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="bg-slate-50 p-4 rounded-2xl text-xs font-black outline-none border border-slate-100"><option value="">Ano</option>{availableYears.map(y=><option key={y} value={y}>{y}</option>)}</select>
                                 </div>
                                 
                                 {Object.keys(filteredAndGrouped).length === 0 ? (
@@ -349,7 +349,10 @@
                                     <div key={date} className="space-y-6">
                                         <div className="flex items-center gap-4 px-2">
                                             <div className="h-px bg-slate-200 flex-1"></div>
-                                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{date}</span>
+                                            <div className="flex items-center gap-2 bg-white px-4 py-1 rounded-full border border-slate-200">
+                                                <Icon name="calendar" size={14} className="text-emerald-600"/>
+                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{date}</span>
+                                            </div>
                                             <div className="h-px bg-slate-200 flex-1"></div>
                                         </div>
                                         {filteredAndGrouped[date].map((r, i) => {
@@ -364,13 +367,11 @@
                                                         <span className="text-[10px] text-slate-300 font-bold">{new Date(r.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tight"><span className="text-slate-300 mr-2">ENF:</span> {r.nurseName}</p>
-                                                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tight"><span className="text-slate-300 mr-2">SGT:</span> {r.sgtsNames}</p>
+                                                        <p className="text-[11px] text-slate-500 font-bold uppercase"><span className="text-slate-300 mr-2">ENF:</span> {r.nurseName}</p>
+                                                        <p className="text-[11px] text-slate-500 font-bold uppercase"><span className="text-slate-300 mr-2">SGT:</span> {r.sgtsNames}</p>
                                                     </div>
                                                     {r.intercurrences && (
-                                                        <div className="bg-slate-50 p-6 rounded-[1.5rem] italic text-xs font-bold text-slate-700 leading-relaxed shadow-inner border border-slate-100/50">
-                                                            "{r.intercurrences}"
-                                                        </div>
+                                                        <div className="bg-slate-50 p-6 rounded-[1.5rem] italic text-xs font-bold text-slate-700 border border-slate-100/50">"{r.intercurrences}"</div>
                                                     )}
                                                 </div>
                                             );
@@ -383,7 +384,7 @@
 
                     <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-100 p-7 flex justify-around items-center rounded-t-[3.5rem] shadow-[0_-15px_40px_rgba(0,0,0,0.05)] z-30">
                         <button onClick={() => setView('dashboard')} className={`transition-all ${view === 'dashboard' ? 'text-emerald-700 scale-125' : 'text-slate-300'}`}><Icon name="activity" size={26}/></button>
-                        <button onClick={() => { setFormData({...formData, selectedSectorId: ''}); setView('form'); }} className="bg-emerald-700 text-white p-5 rounded-[2rem] -mt-20 shadow-2xl shadow-emerald-500/50 border-[6px] border-white active:scale-90 transition-all"><Icon name="plus" size={32}/></button>
+                        <button onClick={() => { setFormData({...formData, selectedSectorId: ''}); setView('form'); }} className="bg-emerald-700 text-white p-5 rounded-[2rem] -mt-20 shadow-2xl shadow-emerald-500/50 border-[6px] border-white active:scale-90"><Icon name="plus" size={32}/></button>
                         <button onClick={() => setView('history')} className={`transition-all ${view === 'history' ? 'text-emerald-700 scale-125' : 'text-slate-300'}`}><Icon name="history" size={26}/></button>
                     </nav>
                 </div>
