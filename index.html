@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HACO - Gestão de Enfermagem</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- CONFIGURAÇÃO ---
+        // Cole aqui a URL do seu Google Apps Script que gerou anteriormente
+        const GOOGLE_SCRIPT_URL = ""; 
+
+        const SECTORS = [
+            { id: 'UPI', name: 'UPI (Clínica/Cirúrgica)', icon: 'Stethoscope', type: 'ward' },
+            { id: 'UTI', name: 'UTI (Intensiva)', icon: 'Activity', type: 'ward' },
+            { id: 'UCC', name: 'UCC (Centro Cirúrgico)', icon: 'Users', type: 'surgery' },
+            { id: 'UPA', name: 'UPA (Pronto Atendimento)', icon: 'AlertCircle', type: 'er' },
+            { id: 'CAIS', name: 'CAIS (ESF)', icon: 'ClipboardList', type: 'er' }
+        ];
+
+        const SHIFTS = [
+            { id: 'Manhã', icon: 'Sunrise', color: 'bg-amber-100 text-amber-700' },
+            { id: 'Tarde', icon: 'Sun', color: 'bg-orange-100 text-orange-700' },
+            { id: 'Noite', icon: 'Moon', color: 'bg-indigo-100 text-indigo-700' }
+        ];
+
+        const AUTHORIZED_NURSES = [
+            "Gisele", "Zanini", "Marasca", "Serafin", "Sandri", "Cimirro", "Parode", 
+            "Oliveira", "Luiziane", "Karen Casarin", "Renata", "Jéssica Cunha", 
+            "Suellen Stiehl", "Maia", "Favilla", "Zomer", "Laura Elisa", 
+            "Barbara Viegas", "Barbara Figueiredo", "Anderson", "Cassia Freitas", 
+            "Nascimento", "Jessica", "Fritz", "Coronet", "Suellen Azevedo", "Pereira"
+        ];
+
+        const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        // Componente de Ícone Lucide (Adaptado para CDN)
+        const Icon = ({ name, size = 24, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name.toLowerCase().replace(/([a-z])([A-Z])/g, '$1-$2')} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        function App() {
+            const [appUser, setAppUser] = useState(null);
+            const [view, setView] = useState('login'); 
+            const [reports, setReports] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [submitting, setSubmitting] = useState(false);
+            const [loginError, setLoginError] = useState('');
+            const [filterDay, setFilterDay] = useState('');
+            const [filterMonth, setFilterMonth] = useState('');
+            const [filterYear, setFilterYear] = useState('');
+            const [loginInput, setLoginInput] = useState('');
+            const [passInput, setPassInput] = useState('');
+
+            const [formData, setFormData] = useState({
+                selectedSectorId: '', shift: 'Manhã', nurseName: '', sgtsNames: '',
+                intercurrences: '', patients: '', discharges: '', admissions: '',
+                transfers: '', procedures: '', consultations: ''
+            });
+
+            const fetchSheetData = async () => {
+                if (!GOOGLE_SCRIPT_URL) return;
+                setLoading(true);
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL);
+                    const data = await response.json();
+                    setReports(data.sort((a, b) => b.timestamp - a.timestamp));
+                } catch (error) { console.error(error); } finally { setLoading(false); }
+            };
+
+            useEffect(() => { if (appUser) fetchSheetData(); }, [appUser]);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const input = loginInput.trim().toLowerCase();
+                const nurse = AUTHORIZED_NURSES.find(n => n.toLowerCase() === input);
+                const sector = SECTORS.find(s => s.id.toLowerCase() === input);
+
+                if ((nurse || sector) && passInput === '123456') {
+                    const name = nurse || (sector ? sector.id : '');
+                    setAppUser({ id: name, name });
+                    setFormData(prev => ({ ...prev, nurseName: name }));
+                    setView('dashboard');
+                } else { setLoginError('Dados incorretos.'); }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!GOOGLE_SCRIPT_URL) return alert("Configure a URL do Script!");
+                setSubmitting(true);
+                const sector = SECTORS.find(s => s.id === formData.selectedSectorId);
+                const payload = { ...formData, sectorName: sector.name, sectorType: sector.type, timestamp: Date.now(), authorName: appUser.name };
+
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                    setTimeout(() => { fetchSheetData(); setView('dashboard'); setSubmitting(false); }, 1500);
+                } catch (error) { setSubmitting(false); }
+            };
+
+            const filteredAndGrouped = useMemo(() => {
+                const filtered = reports.filter(r => {
+                    const d = new Date(r.timestamp);
+                    return (!filterDay || d.getDate() === parseInt(filterDay)) &&
+                           (!filterMonth || (d.getMonth() + 1) === parseInt(filterMonth)) &&
+                           (!filterYear || d.getFullYear() === parseInt(filterYear));
+                });
+                const groups = {};
+                filtered.forEach(r => {
+                    const ds = new Date(r.timestamp).toLocaleDateString('pt-BR');
+                    if (!groups[ds]) groups[ds] = [];
+                    groups[ds].push(r);
+                });
+                return groups;
+            }, [reports, filterDay, filterMonth, filterYear]);
+
+            const availableYears = useMemo(() => [...new Set(reports.map(r => new Date(r.timestamp).getFullYear()))].sort((a,b)=>b-a), [reports]);
+
+            if (view === 'login') return (
+                <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+                    <div className="w-full max-w-md bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl border border-slate-800">
+                        <div className="flex flex-col items-center mb-10 text-center">
+                            <div className="bg-emerald-600 p-5 rounded-[2rem] mb-6"><Icon name="ClipboardList" size={48} className="text-white"/></div>
+                            <h1 className="text-3xl font-black text-white italic">HACO PLANILHA</h1>
+                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mt-2 border-t border-slate-800 pt-2 w-full">Divisão de Enfermagem</p>
+                        </div>
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Usuário</label>
+                                <input type="text" value={loginInput} onChange={e => setLoginInput(e.target.value)} className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold" placeholder="Nome ou Setor" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Senha</label>
+                                <input type="password" value={passInput} onChange={e => setPassInput(e.target.value)} className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold" placeholder="••••••" />
+                            </div>
+                            {loginError && <p className="text-red-400 text-xs font-bold text-center">{loginError}</p>}
+                            <button type="submit" className="w-full bg-emerald-600 text-white font-black py-5 rounded-[1.5rem] hover:bg-emerald-500 transition-all">ENTRAR NO PLANTÃO</button>
+                        </form>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen pb-24">
+                    <header className="bg-slate-900 text-white p-5 shadow-lg sticky top-0 z-20 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-emerald-600 p-2 rounded-xl"><Icon name="ShieldCheck" size={20} /></div>
+                            <div>
+                                <h1 className="text-sm font-black uppercase">HACO Integrado</h1>
+                                <p className="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Olá, {appUser.name}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={fetchSheetData} className={`p-2 bg-slate-800 rounded-xl ${loading ? 'animate-spin' : ''}`}><Icon name="RefreshCcw" size={18}/></button>
+                            <button onClick={handleLogout} className="p-2 bg-slate-800 hover:bg-red-600 rounded-xl"><Icon name="LogOut" size={18}/></button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-4xl mx-auto p-4">
+                        {view === 'dashboard' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-in">
+                                {SECTORS.map(s => {
+                                    const latest = reports.find(r => r.sectorId === s.id);
+                                    const shift = latest ? SHIFTS.find(sh => sh.id === latest.shift) : null;
+                                    return (
+                                        <div key={s.id} className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6">
+                                            <div className="flex justify-between items-start mb-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-4 bg-slate-50 text-slate-700 rounded-2xl"><Icon name={s.icon}/></div>
+                                                    <div>
+                                                        <h3 className="font-black text-slate-900 text-xl">{s.id}</h3>
+                                                        <p className="text-[9px] text-slate-400 font-bold uppercase">{s.name}</p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => { setFormData({...formData, selectedSectorId: s.id}); setView('form'); }} className="bg-slate-900 text-white p-3 rounded-2xl"><Icon name="PlusCircle" size={22}/></button>
+                                            </div>
+                                            {latest ? (
+                                                <div className="space-y-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className={`text-[10px] font-black px-3 py-1 rounded-xl ${shift?.color}`}>{latest.shift}</span>
+                                                        <span className="text-[10px] text-slate-400 italic font-bold">{new Date(latest.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {s.type === 'ward' ? (
+                                                            ['Pac', 'Alt', 'Baix', 'Trns'].map((l, i) => (
+                                                                <div key={l} className="bg-slate-50 p-2 rounded-xl text-center">
+                                                                    <p className="text-[8px] font-black text-slate-400 uppercase">{l}</p>
+                                                                    <p className="text-sm font-black text-slate-800">{latest[['patients', 'discharges', 'admissions', 'transfers'][i]]}</p>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="col-span-4 bg-slate-50 p-3 rounded-xl flex justify-between px-6">
+                                                                <span className="text-[10px] font-black text-slate-400 uppercase">Produção</span>
+                                                                <span className="font-black text-emerald-700">{latest.procedures || latest.consultations}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-500 font-bold border-t pt-3">Resp: {latest.nurseName}</p>
+                                                </div>
+                                            ) : <div className="py-10 text-center text-slate-300 font-black text-[10px] uppercase border-2 border-dashed border-slate-50 rounded-3xl">Sem registro</div>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {view === 'form' && (
+                            <div className="bg-white rounded-[3rem] p-8 shadow-2xl animate-in">
+                                <div className="flex justify-between items-center mb-8">
+                                    <button onClick={() => setView('dashboard')} className="p-3 bg-slate-50 rounded-2xl"><Icon name="ChevronRight" className="rotate-180"/></button>
+                                    <h2 className="text-2xl font-black text-slate-900 uppercase italic">{formData.selectedSectorId}</h2>
+                                </div>
+                                <form onSubmit={handleSubmit} className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Enfermeiro</label>
+                                            <input type="text" value={formData.nurseName} onChange={e => setFormData({...formData, nurseName: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sargentos</label>
+                                            <input type="text" value={formData.sgtsNames} onChange={e => setFormData({...formData, sgtsNames: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold" />
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-950 p-8 rounded-[2.5rem] text-white">
+                                        <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-6">Censo e Movimentação</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                            {['UPI', 'UTI'].includes(formData.selectedSectorId) ? (
+                                                ['patients', 'discharges', 'admissions', 'transfers'].map((f, i) => (
+                                                    <div key={f}>
+                                                        <label className="text-[8px] font-black text-slate-500 uppercase">{['Nº Pac', 'Altas', 'Baixas', 'Transf'][i]}</label>
+                                                        <input type="number" value={formData[f]} onChange={e => setFormData({...formData, [f]: e.target.value})} className="w-full bg-white/5 p-4 rounded-xl text-center font-black" />
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-4">
+                                                    <label className="text-[8px] font-black text-slate-500 uppercase">Total Atendimentos/Procedimentos</label>
+                                                    <input type="number" value={formData.procedures || formData.consultations} onChange={e => setFormData({...formData, procedures: e.target.value, consultations: e.target.value})} className="w-full bg-white/5 p-4 rounded-xl text-center font-black" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <textarea value={formData.intercurrences} onChange={e => setFormData({...formData, intercurrences: e.target.value})} className="w-full p-6 bg-slate-50 border rounded-[2rem] h-32 outline-none font-bold text-sm" placeholder="Intercorrências e faltas..."></textarea>
+                                    <button type="submit" disabled={submitting} className="w-full bg-emerald-700 text-white font-black py-6 rounded-[2rem] text-xl italic">{submitting ? 'PROCESSANDO...' : 'ENVIAR PARA PLANILHA'}</button>
+                                </form>
+                            </div>
+                        )}
+
+                        {view === 'history' && (
+                            <div className="space-y-8 animate-in">
+                                <div className="bg-white p-6 rounded-[2.5rem] grid grid-cols-3 gap-3">
+                                    <select value={filterDay} onChange={e => setFilterDay(e.target.value)} className="bg-slate-50 p-3 rounded-xl text-xs font-bold"><option value="">Dia</option>{Array.from({length:31}, (_,i)=><option key={i+1}>{i+1}</option>)}</select>
+                                    <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-slate-50 p-3 rounded-xl text-xs font-bold"><option value="">Mês</option>{MONTHS.map((m,i)=><option key={i+1} value={i+1}>{m}</option>)}</select>
+                                    <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="bg-slate-50 p-3 rounded-xl text-xs font-bold"><option value="">Ano</option>{availableYears.map(y=><option key={y}>{y}</option>)}</select>
+                                </div>
+                                {Object.keys(filteredAndGrouped).map(date => (
+                                    <div key={date} className="space-y-4">
+                                        <div className="flex items-center gap-3"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{date}</span><div className="h-px bg-slate-200 flex-1"></div></div>
+                                        {filteredAndGrouped[date].map((r, i) => (
+                                            <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-xl uppercase">{r.sectorId}</span>
+                                                    <span className="text-[9px] text-slate-400 font-bold">{new Date(r.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-600 font-bold mb-2 uppercase">Resp: {r.nurseName}</p>
+                                                {r.intercurrences && <div className="bg-slate-50 p-4 rounded-2xl italic text-xs font-bold text-slate-700">"{r.intercurrences}"</div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </main>
+
+                    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t p-6 flex justify-around items-center rounded-t-[3rem] shadow-2xl">
+                        <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'text-emerald-700 scale-110' : 'text-slate-400'}><Icon name="LayoutDashboard"/></button>
+                        <button onClick={() => { setFormData({...formData, selectedSectorId: ''}); setView('form'); }} className="bg-emerald-700 text-white p-5 rounded-3xl -mt-16 shadow-2xl border-4 border-white"><Icon name="PlusCircle" size={32}/></button>
+                        <button onClick={() => setView('history')} className={view === 'history' ? 'text-emerald-700 scale-110' : 'text-slate-400'}><Icon name="History"/></button>
+                    </nav>
+                </div>
+            );
+        }
+
+        function InputGroup({ label, value, onChange, placeholder, type = "text", dark = false, icon }) {
+            return (
+                <div className="space-y-3">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ml-2 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{label}</label>
+                    <div className="relative">
+                        <input type={type} required value={value} onChange={(e) => onChange(e.target.value)} className={`w-full p-4 pl-12 ${dark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'} border rounded-2xl outline-none font-bold text-sm`} placeholder={placeholder} />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><Icon name={icon} size={18}/></div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
