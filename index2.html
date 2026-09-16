@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditor Digital CSAE - HACO</title>
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; margin: 0; padding: 0; color: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Ícones SVG
+        const Icons = {
+            ClipboardCheck: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 11 16 15 12"/></svg>,
+            Check: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            XCircle: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+            Minus: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Save: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        };
+
+        // Estrutura das 32 perguntas mapeadas da sua planilha
+        const auditQuestions = [
+            { id: 1, section: "Histórico de Enfermagem", text: "Possui Histórico de Enfermagem na admissão hospitalar?" },
+            { id: 2, section: "Histórico de Enfermagem", text: "Possui identificação completa do paciente?" },
+            { id: 3, section: "Histórico de Enfermagem", text: "O formulário foi completamente preenchido?" },
+            { id: 4, section: "Histórico de Enfermagem", text: "Possui registro do exame físico?" },
+            { id: 5, section: "Histórico de Enfermagem", text: "O formulário encontra-se devidamente carimbado e assinado?" },
+            
+            { id: 6, section: "Diagnóstico de Enfermagem", text: "Possui Diagnóstico de Enfermagem?" },
+            { id: 7, section: "Diagnóstico de Enfermagem", text: "Possui identificação completa do paciente?" },
+            { id: 8, section: "Diagnóstico de Enfermagem", text: "O formulário encontra-se devidamente carimbado e assinado?" },
+            { id: 9, section: "Diagnóstico de Enfermagem", text: "Possui Diagnósticos de Enfermagem na SAE Perioperatória?" },
+            
+            { id: 10, section: "Planejamento de Enfermagem", text: "Observa-se o estabelecimento de Diagnósticos prioritários na Evolução?" },
+            { id: 11, section: "Planejamento de Enfermagem", text: "São determinados os resultados esperados, na Evolução de Enfermagem?" },
+            { id: 12, section: "Planejamento de Enfermagem", text: "Os resultados esperados são compatíveis com os Diagnósticos?" },
+            { id: 13, section: "Planejamento de Enfermagem", text: "São determinados os prazos para a resolução dos problemas encontrados?" },
+            { id: 14, section: "Planejamento de Enfermagem", text: "O formulário encontra-se devidamente carimbado e assinado?" },
+            
+            { id: 15, section: "Implementação", text: "São elaboradas as Prescrições de Enfermagem na admissão e diariamente?" },
+            { id: 16, section: "Implementação", text: "As Prescrições são compatíveis com os Diagnósticos de Enfermagem?" },
+            { id: 17, section: "Implementação", text: "Possui Prescrições de Enfermagem adicionais?" },
+            { id: 18, section: "Implementação", text: "As Prescrições de Enfermagem são aprazadas adequadamente?" },
+            { id: 19, section: "Implementação", text: "As Prescrições são checadas nos horários aprazados?" },
+            { id: 20, section: "Implementação", text: "A Prescrição de Enfermagem encontra-se devidamente carimbada e assinada?" },
+            { id: 21, section: "Implementação", text: "Possui Prescrições na SAE Perioperatória?" },
+            { id: 22, section: "Implementação", text: "O formulário da SAE Perioperatória encontra-se devidamente carimbado e assinado?" },
+            
+            { id: 23, section: "Avaliação e Anotações", text: "Os resultados avaliados são compatíveis com a Prescrição de Enfermagem?" },
+            { id: 24, section: "Avaliação e Anotações", text: "Possui Evolução de Enfermagem diária?" },
+            { id: 25, section: "Avaliação e Anotações", text: "As Evoluções apresentam a avaliação do estado geral do paciente?" },
+            { id: 26, section: "Avaliação e Anotações", text: "Em caso de transferência, há Evolução do setor de origem e de destino?" },
+            { id: 27, section: "Avaliação e Anotações", text: "Em caso de óbito, há evolução de enfermagem relativa ao ocorrido?" },
+            { id: 28, section: "Avaliação e Anotações", text: "A Evolução de Enfermagem encontra-se devidamente carimbada e assinada?" },
+            { id: 29, section: "Avaliação e Anotações", text: "São registradas anotações de Enfermagem?" },
+            { id: 30, section: "Avaliação e Anotações", text: "As Anotações de Enfermagem encontram-se devidamente carimbadas e assinadas?" },
+            { id: 31, section: "Avaliação e Anotações", text: "São registradas anotações no formulário da SRPA?" },
+            { id: 32, section: "Avaliação e Anotações", text: "As Anotações da SRPA encontram-se devidamente carimbadas e assinadas?" }
+        ];
+
+        const App = () => {
+            const [meta, setMeta] = useState({ prontuario: '', setor: 'UPI', data: new Date().toISOString().split('T')[0], auditor: '' });
+            const [answers, setAnswers] = useState({});
+            const [copyStatus, setCopyStatus] = useState(false);
+
+            // Agrupa as perguntas por seção para criar as abas
+            const sections = [...new Set(auditQuestions.map(q => q.section))];
+            const [activeSection, setActiveSection] = useState(sections[0]);
+
+            const handleAnswer = (id, value) => {
+                setAnswers(prev => ({ ...prev, [id]: value }));
+            };
+
+            const calculateProgress = () => {
+                const total = auditQuestions.length;
+                const answered = Object.keys(answers).length;
+                return Math.round((answered / total) * 100);
+            };
+
+            const generateExcelRow = () => {
+                // Prepara os dados na ordem exata das 32 perguntas da planilha original
+                // Se a resposta for SIM, o "x" vai na coluna de SIM. Se NÃO, na de NÃO. Se NA, na de NA.
+                // Aqui geraremos um formato TSV (Tab-Separated Values) que é colado perfeitamente no Excel.
+                let rowData = `${meta.data}\t${meta.prontuario}\t${meta.setor}\t${meta.auditor}\t`;
+                
+                // Nós apenas precisamos copiar as respostas brutas para que ele cole nas colunas correspondentes de SIM/NÃO/NA
+                // Para manter simples e robusto para colar no Excel, podemos gerar 3 células para cada pergunta: [SIM, NÃO, NA]
+                // Mas para facilitar, vamos gerar apenas as respostas lineares e o usuário cola em uma coluna auxiliar, ou gerar as colunas de "x"
+                
+                let answersArray = [];
+                for(let i = 1; i <= 32; i++) {
+                    const ans = answers[i];
+                    if(ans === 'SIM') answersArray.push('x\t\t');
+                    else if(ans === 'NÃO') answersArray.push('\tx\t');
+                    else if(ans === 'NA') answersArray.push('\t\tx');
+                    else answersArray.push('\t\t'); // Deixou em branco
+                }
+
+                return answersArray.join('\t');
+            };
+
+            const copyToClipboard = () => {
+                // Gerando um relatório textual limpo para colar no grupo ou relatórios gerais, 
+                // e o TSV para colar direto no excel.
+                const falhas = auditQuestions.filter(q => answers[q.id] === 'NÃO').map(q => `- ${q.text}`);
+                
+                const report = `AUDITORIA SAE - HACO\nProntuário: ${meta.prontuario} | Setor: ${meta.setor} | Auditor: ${meta.auditor}\nData: ${meta.data}\n\n` +
+                               `RESULTADO (Conformidade: ${calculateProgress()}% auditado)\n` +
+                               `Pontos Críticos Identificados (Não Conformidades):\n` +
+                               (falhas.length > 0 ? falhas.join('\n') : "Nenhuma não conformidade registrada.") +
+                               `\n\n[Gerado via Auditor Digital CSAE - HACO]`;
+
+                navigator.clipboard.writeText(report).then(() => {
+                    setCopyStatus(true);
+                    setTimeout(() => setCopyStatus(false), 2000);
+                });
+            };
+
+            const copyForExcel = () => {
+                // Formato exclusivo para colar nas colunas de SIM/NAO/NA da planilha
+                let excelRow = "";
+                auditQuestions.forEach(q => {
+                    const ans = answers[q.id];
+                    let sim = ans === 'SIM' ? 'x' : '';
+                    let nao = ans === 'NÃO' ? 'x' : '';
+                    let na = ans === 'NA' ? 'x' : '';
+                    excelRow += `${sim}\t${nao}\t${na}\n`;
+                });
+                navigator.clipboard.writeText(excelRow);
+                alert("Respostas copiadas! Cole na primeira célula da coluna 'SIM' do seu Excel correspondente à pergunta 1.");
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade">
+                    
+                    {/* CABEÇALHO */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl mb-8 flex flex-col md:flex-row justify-between gap-6 items-center">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-blue-600 p-4 rounded-2xl shadow-lg shadow-blue-500/20 text-white">
+                                <Icons.ClipboardCheck />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Auditor Digital CSAE</h1>
+                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-1">Hospital de Aeronáutica de Canoas</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-col w-full md:w-auto gap-2 text-right">
+                            <div className="flex justify-between md:justify-end items-center gap-4">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Progresso da Auditoria</span>
+                                <span className="text-lg font-black text-white">{calculateProgress()}%</span>
+                            </div>
+                            <div className="w-full md:w-48 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${calculateProgress()}%` }}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* METADADOS */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Prontuário</label>
+                            <input className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-blue-500 outline-none" placeholder="Ex: 80001263" value={meta.prontuario} onChange={e => setMeta({...meta, prontuario: e.target.value})} />
+                        </div>
+                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Setor</label>
+                            <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-blue-500 outline-none" value={meta.setor} onChange={e => setMeta({...meta, setor: e.target.value})}>
+                                <option>UPI</option><option>UTIP1</option><option>UTIP2</option><option>UTIP3</option><option>UCC</option><option>UPA</option>
+                            </select>
+                        </div>
+                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Auditor (Membro CSAE)</label>
+                            <input className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-blue-500 outline-none" placeholder="Seu Nome" value={meta.auditor} onChange={e => setMeta({...meta, auditor: e.target.value})} />
+                        </div>
+                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Data da Avaliação</label>
+                            <input type="date" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-blue-500 outline-none" value={meta.data} onChange={e => setMeta({...meta, data: e.target.value})} />
+                        </div>
+                    </div>
+
+                    {/* NAVEGAÇÃO DE SEÇÕES */}
+                    <div className="flex overflow-x-auto no-scrollbar gap-2 mb-8 bg-slate-900 p-2 rounded-2xl border border-slate-800">
+                        {sections.map(sec => (
+                            <button 
+                                key={sec} 
+                                onClick={() => setActiveSection(sec)}
+                                className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeSection === sec ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            >
+                                {sec}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* PERGUNTAS DA SEÇÃO ATIVA */}
+                    <div className="space-y-4 mb-12">
+                        {auditQuestions.filter(q => q.section === activeSection).map((q, index) => (
+                            <div key={q.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:border-slate-700 transition-colors">
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-slate-950 text-slate-500 font-black text-sm w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-slate-800">
+                                        {q.id}
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-200 mt-1.5 leading-relaxed">{q.text}</p>
+                                </div>
+                                <div className="flex gap-2 shrink-0 self-end lg:self-auto">
+                                    <button 
+                                        onClick={() => handleAnswer(q.id, 'SIM')}
+                                        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black transition-all ${answers[q.id] === 'SIM' ? 'bg-green-600 text-white shadow-[0_0_15px_rgba(22,163,74,0.4)]' : 'bg-slate-950 border border-slate-800 text-slate-500 hover:text-green-500'}`}
+                                    >
+                                        <Icons.Check /> SIM
+                                    </button>
+                                    <button 
+                                        onClick={() => handleAnswer(q.id, 'NÃO')}
+                                        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black transition-all ${answers[q.id] === 'NÃO' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-slate-950 border border-slate-800 text-slate-500 hover:text-red-500'}`}
+                                    >
+                                        <Icons.XCircle /> NÃO
+                                    </button>
+                                    <button 
+                                        onClick={() => handleAnswer(q.id, 'NA')}
+                                        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black transition-all ${answers[q.id] === 'NA' ? 'bg-slate-600 text-white shadow-[0_0_15px_rgba(71,85,105,0.4)]' : 'bg-slate-950 border border-slate-800 text-slate-500 hover:text-white'}`}
+                                    >
+                                        <Icons.Minus /> N/A
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* BOTÕES DE AÇÃO */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <button 
+                            onClick={copyToClipboard}
+                            className={`flex-1 flex items-center justify-center gap-3 py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${copyStatus ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-xl shadow-blue-900/20'}`}
+                        >
+                            {copyStatus ? "Relatório Copiado!" : "Gerar Relatório de Não Conformidades"}
+                        </button>
+                        <button 
+                            onClick={copyForExcel}
+                            className="flex items-center justify-center gap-3 px-8 py-5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all"
+                        >
+                            <Icons.Save /> Copiar Formato Excel
+                        </button>
+                    </div>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
