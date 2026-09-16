@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CSAE HACO - Sistema de Gestão de Auditoria</title>
+    <title>CSAE HACO - Enterprise Edition</title>
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -15,36 +15,20 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        :root {
-            --bg-dark: #0f172a; /* Slate 900 */
-            --bg-panel: #1e293b; /* Slate 800 */
-            --border-color: #334155; /* Slate 700 */
-            --accent: #2563eb; /* Blue 600 */
-        }
-
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-dark); 
+            background-color: #0f172a; 
             color: #f8fafc; 
             margin: 0; 
             -webkit-font-smoothing: antialiased;
         }
-
-        /* Scrollbars customizadas para aspecto profissional */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Animações suaves */
         .animate-fade { animation: fadeIn 0.3s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Estilização para impressão/pdf se necessário futuramente */
-        @media print {
-            .no-print { display: none !important; }
-        }
     </style>
 </head>
 <body class="overflow-hidden">
@@ -57,12 +41,37 @@
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = 'Inter';
 
-        // --- DADOS DO SISTEMA ---
-        const AVALIADORES = [
-            "Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", 
-            "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"
-        ];
+        // --- BIBLIOTECA CENTRAL DE ÍCONES (CORRIGIDA) ---
+        const Icons = {
+            Shield: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+            Activity: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+            Calculator: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
+            Search: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            Trash: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            ClipboardCopy: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+            ClipboardCheck: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            PlusCircle: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
+            LogOut: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+            Zap: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            FileText: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>,
+            ChevronDown: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+            ChevronUp: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
+            Back: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+            Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            X: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            Minus: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Download: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            Upload: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+            Chart: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+            Dashboard: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+            ActivityDoc: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12.5 13 11 16 9 11 7.5 13 6 13"/></svg>,
+            FilePlus: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
+            Syringe: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>,
+            Terminal: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        };
 
+        // --- DADOS DO SISTEMA ---
+        const AVALIADORES = ["Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"];
         const PERIODOS = [
             { id: '2026-08', label: '15/08/2026 a 14/09/2026', short: 'Ago/Set' },
             { id: '2026-09', label: '15/09/2026 a 14/10/2026', short: 'Set/Out' },
@@ -71,9 +80,6 @@
             { id: '2026-12', label: '15/12/2026 a 14/01/2027', short: 'Dez/Jan' }
         ];
 
-        const SETORES = ['UPI', 'UTI', 'UCC', 'UPA', 'SAD', 'CAIS'];
-
-        // (Dados de Auditoria, Escalas e NANDA mantidos literais conforme V23 para rigor clínico)
         const PERGUNTAS_AUDITORIA = [
             { id: 1, sec: "Histórico", text: "Possui Histórico de Enfermagem na admissão hospitalar?" },
             { id: 2, sec: "Histórico", text: "Possui identificação completa do paciente?" },
@@ -118,30 +124,29 @@
             { d: 6, name: "Autopercepção", diagnoses: ["Desesperança", "Autoestima baixa", "Distúrbio na imagem corporal", "Identidade pessoal perturbada"] },
             { d: 7, name: "Papéis e Relações", diagnoses: ["Processos familiares disfuncionais", "Tensão do papel de cuidador", "Interação social prejudicada", "Desempenho de papel ineficaz"] },
             { d: 8, name: "Sexualidade", diagnoses: ["Padrão de sexualidade ineficaz", "Disfunção sexual", "Processo de maternidade ineficaz"] },
-            { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto", "Enfrentamento ineficaz", "Negação ineficaz"] },
+            { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto", "Enfrentamento ineficaz"] },
             { d: 10, name: "Princípios de Vida", diagnoses: ["Sofrimento espiritual", "Conflito de decisões", "Não adesão"] },
             { d: 11, name: "Segurança/Proteção", diagnoses: ["Risco de infecção", "Integridade da pele prejudicada", "Integridade tissular prejudicada", "Risco de lesão por pressão", "Risco de queda", "Risco de aspiração", "Risco de sangramento", "Risco de choque", "Termorregulação ineficaz", "Hipertermia", "Hipotermia"] },
-            { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Conforto prejudicado", "Nausea", "Isolamento social"] },
-            { d: 13, name: "Cresc./Desenvolvimento", diagnoses: ["Atraso no desenvolvimento", "Risco de crescimento desproporcional"] }
+            { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Conforto prejudicado", "Nausea", "Isolamento social"] }
         ];
 
         const bradenFull = {
             p: ["1. Totalmente limitado", "2. Muito limitado", "3. Levemente limitado", "4. Nenhuma limitação"],
             u: ["1. Constantemente úmida", "2. Muito úmida", "3. Ocasionalmente úmida", "4. Raramente úmida"],
             a: ["1. Acamado", "2. Em cadeira", "3. Deambula ocasionalmente", "4. Deambula frequentemente"],
-            m: ["1. Totalmente imóvel", "2. Muito limitada", "3. Levemente limitada", "4. Sem limitações"],
+            m: ["1. Totalmente imóvel", "2. Muito limitada", "3. Levemente limitada", "4. Sem limitação"],
             n: ["1. Muito pobre", "2. Provavelmente inadequada", "3. Adequada", "4. Excelente"],
             f: ["1. Problema", "2. Problema potencial", "3. Nenhum problema aparente"]
         };
 
         const fugulinFull = {
-            em: ["Lúcido/Orientado (1)", "Desorientado (2)", "Confuso/Agitado (3)", "Comatoso (4)"],
+            em: ["Lúcido (1)", "Desorientado (2)", "Confuso (3)", "Comatoso (4)"],
             ox: ["Ar ambiente (1)", "O2 Intermitente (2)", "O2 Contínuo (3)", "Ventilação mecânica (4)"],
-            sv: ["Rotina (1)", "Intervalo 4/4h (2)", "Intervalo 2/2h (3)", "Monitorização < 1h (4)"],
-            mo: ["Ativo (1)", "Limitação/Paresia (2)", "Grande limitação/Paraplegia (3)", "Tetraplegia/Imóvel (4)"],
-            lo: ["Deambula (1)", "Cadeira (2)", "Restrito ao leito (3)", "Completamente acamado (4)"],
-            al: ["Independente pela boca (1)", "Auxílio/SNE/GTT (2)", "Totalmente Dependente (3)", "NPT (4)"],
-            cc: ["Independente (1)", "Auxílio chuveiro (2)", "Higiene no leito (3)", "Higiene complexa (4)"],
+            sv: ["Rotina (1)", "Intervalo 4h (2)", "Intervalo 2h (3)", "Monitorização < 1h (4)"],
+            mo: ["Ativo (1)", "Limitação (2)", "Grande limitação (3)", "Imóvel (4)"],
+            lo: ["Deambula (1)", "Cadeira (2)", "Sentar c/ auxílio (3)", "Restrito leito (4)"],
+            al: ["Boca/Indep. (1)", "Auxílio (2)", "SNE/GTT (3)", "NPT (4)"],
+            cc: ["Independente (1)", "Auxílio banho (2)", "Higiene no leito (3)", "Higiene complexa (4)"],
             el: ["Independente (1)", "Auxílio (2)", "Incontinência/SVD (3)", "Diálise/Complexa (4)"],
             te: ["Oral (1)", "EV < 24h (2)", "EV 24h (3)", "Vasoativos (4)"]
         };
@@ -149,36 +154,13 @@
         const morseFull = {
             h: ["Não (0)", "Sim (25)"],
             d: ["Não (0)", "Sim (15)"],
-            a: ["Nenhum / Acamado / Cadeira (0)", "Muletas / Andador (15)", "Móveis / Apoio fixo (30)"],
+            a: ["Nenhum (0)", "Auxílio (15)", "Móveis (30)"],
             t: ["Não (0)", "Sim (20)"],
-            m: ["Normal / Imóvel (0)", "Fraca (10)", "Comprometida (20)"],
-            e: ["Orientado (0)", "Esquece limitações (15)"]
+            m: ["Normal (0)", "Fraca (10)", "Comprometida (20)"],
+            e: ["Orientado (0)", "Esquece limites (15)"]
         };
 
-        // --- ÍCONES ---
-        const Icon = {
-            Back: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
-            Check: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-            X: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-            Minus: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-            Upload: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-            Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-            Chart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-            Menu: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
-            FilePlus: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
-            ActivityDoc: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12.5 13 11 16 9 11 7.5 13 6 13"/></svg>,
-            FileMinus: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
-            Dashboard: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
-            Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-            Calculator: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
-            Copy: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
-            Shield: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-            Syringe: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>,
-            Terminal: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-        };
-
-        // --- COMPONENTE CHART.JS ---
+        // --- COMPONENTES COMPARTILHADOS ---
         const ChartComponent = ({ type, data, options, height = "250px" }) => {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -191,29 +173,67 @@
             return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
         };
 
-        // --- LÓGICA ESTATÍSTICA ---
-        const calculateStats = (recordsToAnalyze) => {
-            const qStats = PERGUNTAS_AUDITORIA.map(q => {
-                let sim = 0, nao = 0, na = 0;
-                recordsToAnalyze.forEach(r => {
-                    const a = r.answers[q.id];
-                    if(a === 'SIM') sim++; else if(a === 'NÃO') nao++; else if(a === 'NA') na++;
-                });
-                const totalValido = sim + nao;
-                const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
-                const pctFalta = totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0; 
-                return { ...q, sim, nao, na, pct, pctFalta, totalValido };
-            });
+        const InputField = ({ label, value, onChange, placeholder = "" }) => (
+            <div className="w-full">
+                <div className="text-[11px] font-black uppercase text-slate-500 mb-2 tracking-widest">{label}</div>
+                <input className="w-full p-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm font-bold text-white focus:border-blue-500 outline-none transition-all" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+            </div>
+        );
 
-            let totalSimGeral = 0, totalNaoGeral = 0;
-            qStats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
-            const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
-            const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
-            
-            return { qStats, globalPct, totalSimGeral, totalNaoGeral, sections };
-        };
+        const TextAreaField = ({ label, value, onChange, h = "h-32", placeholder = "" }) => (
+            <div className="w-full space-y-2">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-widest">{label}</div>
+                <textarea className={`w-full p-6 bg-slate-900 border border-slate-700 rounded-[2rem] text-sm font-bold text-slate-200 focus:border-blue-500 outline-none transition-all ${h}`} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+            </div>
+        );
+
+        const ScaleModule = ({ title, isOpen, toggle, score, badge, children }) => (
+            <div className={`border rounded-[2.5rem] overflow-hidden transition-all duration-300 ${isOpen ? 'bg-slate-900/80 border-blue-500/50 shadow-2xl' : 'bg-slate-900 border-slate-800'}`}>
+                <div onClick={toggle} className="w-full p-6 flex items-center justify-between hover:bg-slate-800/50 cursor-pointer">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl ${isOpen ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}><Icons.Calculator size={20} /></div>
+                        <div className="text-left">
+                            <div className="text-[12px] font-black uppercase tracking-tight text-white">{title}</div>
+                            {!isOpen && badge && <div className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-widest">{badge}</div>}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {score !== null && <div className="px-4 py-1.5 bg-blue-600 text-white rounded-xl text-[10px] font-black shadow-lg shadow-blue-900/50">Score: {score}</div>}
+                        <div className="text-slate-500">{isOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}</div>
+                    </div>
+                </div>
+                {isOpen && <div className="p-8 pt-0 border-t border-slate-800/50 animate-fade">{children}</div>}
+            </div>
+        );
+
+        const ScaleRadio = ({ label, options, values, value, onChange }) => (
+            <div className="space-y-3">
+                <div className="text-[10px] font-black uppercase text-blue-500/80 tracking-widest">{label}</div>
+                <div className="flex flex-col gap-1.5">
+                    {options.map((opt, idx) => {
+                        const val = values ? values[idx] : idx + 1;
+                        const active = value === val;
+                        return (
+                            <button key={idx} onClick={() => onChange(val)} className={`text-left px-4 py-3 rounded-2xl text-[10px] font-bold border-2 transition-all ${active ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-600'}`}>{opt}</button>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+
+        const ExamGroup = ({ title, options, selected, toggle }) => (
+            <div className="bg-slate-900 p-6 rounded-[2.5rem] border border-slate-800">
+                <div className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> {title}</div>
+                <div className="flex flex-wrap gap-2">
+                    {options.map(o => (
+                        <button key={o} onClick={() => toggle(o)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border-2 transition-all ${selected.includes(o) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-200'}`}>{o}</button>
+                    ))}
+                </div>
+            </div>
+        );
 
         // --- SISTEMA PRINCIPAL ---
+
         const App = () => {
             const [db, setDb] = useState(() => {
                 const saved = localStorage.getItem('csae_haco_v24');
@@ -229,11 +249,9 @@
             const [activeFormTab, setActiveFormTab] = useState('EVOLUCAO'); // ADMISSAO, EVOLUCAO, ALTA
             const [activeFormSection, setActiveFormSection] = useState('S'); // S, O, I, C
             
-            // Formulário Corrente (para a view AVALIACAO -> Criação da Evolução)
             const [formState, setFormState] = useState({
                 adm: { procedencia: '', acompanhante: '', queixa: '', hpp: '', alergias: '', medicamentos: '' },
-                subjetivo: '',
-                sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
+                subjetivo: '', sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
                 exame: {}, vasculares: [], viasAereas: [], eliminações: [], diagnosticos: [],
                 interpretacao: '', condutas: [], obs: '',
                 escalas: {
@@ -248,7 +266,7 @@
             const [searchTerm, setSearchTerm] = useState('');
             const [openScale, setOpenScale] = useState(null);
             const [copySuccess, setCopySuccess] = useState(false);
-            const [showMobileTerminal, setShowMobileTerminal] = useState(false); // Toggle terminal on mobile
+            const [showMobileTerminal, setShowMobileTerminal] = useState(false);
 
             // --- AÇÕES DO BANCO DE DADOS ---
             const savePatientsCount = (periodId, sector, count) => {
@@ -256,9 +274,7 @@
             };
 
             const createNewRecord = (periodId, sector) => {
-                const newRecord = {
-                    id: Date.now().toString(), periodId, sector, prontuario: '', auditor: AVALIADORES[0], date: new Date().toISOString().split('T')[0], answers: {}
-                };
+                const newRecord = { id: Date.now().toString(), periodId, sector, prontuario: '', auditor: AVALIADORES[0], date: new Date().toISOString().split('T')[0], answers: {} };
                 setDb(prev => ({ ...prev, records: [...prev.records, newRecord] }));
                 setSelectedRecord(newRecord.id);
                 setView('AVALIACAO');
@@ -280,8 +296,7 @@
 
             const exportData = () => {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-                const a = document.createElement('a');
-                a.href = dataStr; a.download = `Backup_CSAE_HACO_${new Date().toISOString().split('T')[0]}.json`; a.click();
+                const a = document.createElement('a'); a.href = dataStr; a.download = `Backup_CSAE_HACO_${new Date().toISOString().split('T')[0]}.json`; a.click();
             };
 
             const importData = (e) => {
@@ -297,6 +312,25 @@
                     };
                     reader.readAsText(file);
                 }
+            };
+
+            // --- LÓGICA ESTATÍSTICA (ANALYTICS) ---
+            const calculateStats = (recordsToAnalyze) => {
+                const qStats = PERGUNTAS_AUDITORIA.map(q => {
+                    let sim = 0, nao = 0, na = 0;
+                    recordsToAnalyze.forEach(r => { const a = r.answers[q.id]; if(a === 'SIM') sim++; else if(a === 'NÃO') nao++; else if(a === 'NA') na++; });
+                    const totalValido = sim + nao;
+                    const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
+                    const pctFalta = totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0; 
+                    return { ...q, sim, nao, na, pct, pctFalta, totalValido };
+                });
+
+                let totalSimGeral = 0, totalNaoGeral = 0;
+                qStats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
+                const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
+                const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
+                
+                return { qStats, globalPct, totalSimGeral, totalNaoGeral, sections };
             };
 
             // --- LÓGICA DE EVOLUÇÃO CLÍNICA ---
@@ -375,10 +409,10 @@
                                 <p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">Gestão de Auditoria - HACO</p>
                             </div>
                             <div className="flex flex-wrap gap-3 w-full md:w-auto">
-                                <button onClick={() => setView('COMPILADO_ANUAL')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-bold uppercase transition-all shadow-lg"><Icon.Chart/> Análise Anual</button>
-                                <button onClick={exportData} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all"><Icon.Download/> Backup</button>
+                                <button onClick={() => setView('COMPILADO_ANUAL')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-bold uppercase transition-all shadow-lg"><Icons.Chart/> Análise Anual</button>
+                                <button onClick={exportData} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all"><Icons.Download/> Backup</button>
                                 <label className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all cursor-pointer">
-                                    <Icon.Upload/> Importar
+                                    <Icons.Upload/> Importar
                                     <input type="file" accept=".json" onChange={importData} className="hidden" />
                                 </label>
                             </div>
@@ -417,7 +451,7 @@
                                                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md ${feitosUTI >= metaUTI && metaUTI > 0 ? 'bg-green-500/20 text-green-400' : 'bg-slate-900 text-slate-400'}`}>UTI: {feitosUTI}/{metaUTI}</span>
                                                 </div>
                                             </div>
-                                            <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center group-hover:bg-blue-600 transition-colors text-white"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+                                            <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center group-hover:bg-blue-600 transition-colors text-white"><Icons.ChevronDown /></div>
                                         </button>
                                     )
                                 })}
@@ -439,7 +473,7 @@
                 return (
                     <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8">
                         <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
-                            <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icon.Back /></button>
+                            <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icons.Back /></button>
                             <div>
                                 <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">{p.label}</h1>
                                 <p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">Amostragem do Período</p>
@@ -447,7 +481,6 @@
                         </header>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Card UPI */}
                             <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-5">
                                 <div className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-blue-500 pl-3">Meta UPI (Mín 40%)</div>
                                 <div className="flex items-center gap-4">
@@ -462,7 +495,6 @@
                                 </div>
                                 <button onClick={() => createNewRecord(p.id, 'UPI')} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all text-white">+ Nova Auditoria UPI</button>
                             </div>
-                            {/* Card UTI */}
                             <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-5">
                                 <div className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-red-500 pl-3">Meta UTI (Mín 40%)</div>
                                 <div className="flex items-center gap-4">
@@ -482,7 +514,7 @@
                         <div className="space-y-4">
                             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                 <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-1">Prontuários Avaliados</h2>
-                                <button onClick={() => setView('COMPILADO_PERIODO')} className="px-5 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2"><Icon.Chart /> Estatísticas do Período</button>
+                                <button onClick={() => setView('COMPILADO_PERIODO')} className="px-5 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2"><Icons.Chart /> Estatísticas do Período</button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {db.records.filter(r => r.periodId === p.id).map(r => {
@@ -491,7 +523,7 @@
                                         <div key={r.id} className="bg-slate-800 p-5 rounded-2xl border border-slate-700 flex flex-col gap-3 relative overflow-hidden">
                                             <div className="flex justify-between items-start">
                                                 <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${r.sector==='UPI' ? 'bg-blue-600/20 text-blue-400' : 'bg-red-600/20 text-red-400'}`}>{r.sector}</div>
-                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-500 hover:text-red-500"><Icon.Trash /></button>
+                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-500 hover:text-red-500"><Icons.Trash /></button>
                                             </div>
                                             <div>
                                                 <div className="text-lg font-black text-white">{r.prontuario || 'Sem Prontuário'}</div>
@@ -530,29 +562,26 @@
                     <div className="flex flex-col lg:flex-row h-screen animate-fade bg-slate-900">
                         {/* FORMULÁRIO ESQUERDA */}
                         <div className="flex-1 flex flex-col overflow-hidden relative">
-                            {/* Toolbar Mobile/Desktop Formulário */}
                             <header className="flex-none bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center z-10 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => setView('PERIODO')} className="p-2 bg-slate-800 rounded-lg"><Icon.Back /></button>
+                                    <button onClick={() => setView('PERIODO')} className="p-2 bg-slate-800 rounded-lg"><Icons.Back /></button>
                                     <div>
                                         <div className="text-sm font-black text-white leading-tight">Auditoria: {rec.sector}</div>
                                         <div className="text-[10px] text-slate-400 font-bold uppercase">{progress}% Concluído</div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={copyAuditReport} className="hidden md:flex px-4 py-2 bg-slate-800 text-slate-200 rounded-lg text-[10px] font-bold uppercase items-center gap-2"><Icon.ClipboardCheck /> Relatório</button>
-                                    <button onClick={() => setShowMobileTerminal(!showMobileTerminal)} className="lg:hidden p-2 bg-blue-600 text-white rounded-lg"><Icon.Terminal /></button>
+                                    <button onClick={copyAuditReport} className="hidden md:flex px-4 py-2 bg-slate-800 text-slate-200 rounded-lg text-[10px] font-bold uppercase items-center gap-2"><Icons.ClipboardCheck /> Relatório</button>
+                                    <button onClick={() => setShowMobileTerminal(!showMobileTerminal)} className="lg:hidden p-2 bg-blue-600 text-white rounded-lg"><Icons.Terminal /></button>
                                 </div>
                             </header>
 
-                            {/* Conteúdo Rolável (Auditoria ou Evolução) */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24 lg:pb-6">
-                                {/* Navegação Interna: Tabs */}
                                 <div className="flex gap-2 mb-6 bg-slate-800 p-1 rounded-xl overflow-x-auto no-scrollbar">
                                     <button onClick={() => setActiveFormTab('ADMISSAO')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeFormTab === 'ADMISSAO' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}>Admissão</button>
                                     <button onClick={() => setActiveFormTab('EVOLUCAO')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeFormTab === 'EVOLUCAO' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Evolução (SOIC)</button>
                                     <button onClick={() => setActiveFormTab('ALTA')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeFormTab === 'ALTA' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}>Alta</button>
-                                    <button onClick={() => setActiveFormTab('AUDIT')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center gap-1 ${activeFormTab === 'AUDIT' ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}><Icon.Check/> Check-list</button>
+                                    <button onClick={() => setActiveFormTab('AUDIT')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center gap-1 ${activeFormTab === 'AUDIT' ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}><Icons.Check/> Check-list</button>
                                 </div>
 
                                 {activeFormTab === 'AUDIT' && (
@@ -609,13 +638,11 @@
                                         
                                         {activeFormSection === 'O' && (
                                             <div className="space-y-6">
-                                                {/* SV */}
                                                 <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
                                                     {['pa','fc','fr','temp','spo2','hgt','eva'].map(v => (
                                                         <div key={v} className="bg-slate-800 p-3 rounded-xl border border-slate-700"><div className="text-[9px] font-bold uppercase text-slate-500 mb-1">{v}</div><input className="w-full bg-transparent text-sm font-bold text-white outline-none" value={formState.sv[v]} onChange={e => setFormState({...formState, sv: {...formState.sv, [v]: e.target.value}})} placeholder="-" /></div>
                                                     ))}
                                                 </div>
-                                                {/* Escalas Rápidas */}
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                                                         <div className="flex justify-between items-center mb-3"><span className="text-[10px] font-bold uppercase text-blue-400">Braden</span><span className="text-xs font-black text-white">{bradenCalc.total}</span></div>
@@ -628,7 +655,6 @@
                                                         <select className="w-full bg-slate-900 p-2 rounded text-[10px] text-white outline-none" onChange={e => setFormState({...formState, escalas: {...formState.escalas, fugulin: {...formState.escalas.fugulin, ox: parseInt(e.target.value)}}})}><option value="1">Ar Ambiente</option><option value="4">Vent. Mecânica</option></select>
                                                     </div>
                                                 </div>
-                                                {/* Exame Físico Básico */}
                                                 <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                                                     <div className="text-[10px] font-bold uppercase text-blue-400 mb-3">Exame Físico Rápido</div>
                                                     <div className="flex flex-wrap gap-2">
@@ -713,7 +739,7 @@
                 return (
                     <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8 max-w-7xl mx-auto p-4 md:p-8">
                         <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
-                            <button onClick={() => setView('PERIODO')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icon.Back /></button>
+                            <button onClick={() => setView('PERIODO')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icons.Back /></button>
                             <div><h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Análise do Período</h1><p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">{p.label}</p></div>
                         </header>
                         <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center py-10 shadow-lg">
@@ -734,7 +760,7 @@
                 return (
                     <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8 max-w-7xl mx-auto p-4 md:p-8">
                         <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
-                            <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icon.Back /></button>
+                            <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icons.Back /></button>
                             <div><h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Análise Anual</h1><p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">Evolução de Qualidade</p></div>
                         </header>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -752,42 +778,26 @@
                 );
             };
 
-            // --- NAVEGAÇÃO MOBILE INFERIOR ---
             const MobileNav = () => (
                 <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe">
-                    <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'DASHBOARD' ? 'text-blue-500' : 'text-slate-500'}`}>
-                        <Icons.Dashboard />
-                        <span className="text-[8px] font-bold mt-1">Painel</span>
-                    </button>
-                    {selectedPeriod && (
-                        <button onClick={() => setView('PERIODO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'PERIODO' ? 'text-blue-500' : 'text-slate-500'}`}>
-                            <Icons.ActivityDoc />
-                            <span className="text-[8px] font-bold mt-1">Amostra</span>
-                        </button>
-                    )}
-                    {selectedRecord && (
-                        <button onClick={() => setView('AVALIACAO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500'}`}>
-                            <Icons.FilePlus />
-                            <span className="text-[8px] font-bold mt-1">Auditoria</span>
-                        </button>
-                    )}
+                    <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Dashboard /><span className="text-[8px] font-bold mt-1">Painel</span></button>
+                    {selectedPeriod && <button onClick={() => setView('PERIODO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.ActivityDoc /><span className="text-[8px] font-bold mt-1">Amostra</span></button>}
+                    {selectedRecord && <button onClick={() => setView('AVALIACAO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.FilePlus /><span className="text-[8px] font-bold mt-1">Auditoria</span></button>}
                 </div>
             );
 
             return (
                 <div className="h-screen w-full flex flex-col md:flex-row bg-slate-950 overflow-hidden">
-                    {/* SIDEBAR DESKTOP */}
                     <div className="hidden md:flex w-20 lg:w-24 bg-slate-900 border-r border-slate-800 flex-col items-center py-8 z-50 shrink-0">
                         <div className="p-3 bg-blue-600 rounded-xl shadow-lg mb-8"><Icons.Shield size={24}/></div>
                         <div className="flex flex-col gap-4 w-full px-4">
-                            <button onClick={() => setView('DASHBOARD')} title="Painel de Controle" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'DASHBOARD' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.Dashboard /></button>
-                            {selectedPeriod && <button onClick={() => setView('PERIODO')} title="Amostragem" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'PERIODO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.ActivityDoc /></button>}
+                            <button onClick={() => setView('DASHBOARD')} title="Painel de Controle" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.Dashboard /></button>
+                            {selectedPeriod && <button onClick={() => setView('PERIODO')} title="Amostragem" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.ActivityDoc /></button>}
                             {selectedRecord && <button onClick={() => setView('AVALIACAO')} title="Avaliação" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'AVALIACAO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.FilePlus /></button>}
                         </div>
                         <div className="mt-auto opacity-30 text-[8px] font-black uppercase text-center tracking-widest">CSAE<br/>HACO</div>
                     </div>
 
-                    {/* CONTEÚDO DINÂMICO */}
                     <div className="flex-1 overflow-y-auto h-full relative custom-scrollbar bg-slate-950">
                         {view === 'DASHBOARD' && renderDashboard()}
                         {view === 'PERIODO' && renderPeriodo()}
@@ -796,7 +806,6 @@
                         {view === 'COMPILADO_ANUAL' && renderCompiladoAnual()}
                     </div>
 
-                    {/* NAVEGAÇÃO MOBILE */}
                     {view !== 'AVALIACAO' && <MobileNav />}
                     {view === 'AVALIACAO' && !showMobileTerminal && <MobileNav />}
                 </div>
