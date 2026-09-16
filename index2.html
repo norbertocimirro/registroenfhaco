@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GT SAE HACO - Gestão de Auditoria</title>
+    <title>GT SAE HACO - Sistema Cloud de Auditoria</title>
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -12,39 +12,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK (Compat Version para HTML único) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #0f172a; 
-            color: #e2e8f0; 
-            margin: 0; 
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* Scrollbars discretas */
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; margin: 0; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-        /* Estilos para o Gerador de PDF */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .animate-fade { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @media print {
             @page { size: A4 landscape; margin: 10mm; }
-            body { 
-                background-color: #ffffff !important; 
-                color: #000000 !important; 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
-            }
+            body { background-color: #ffffff !important; color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
             .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-            .print-bg-white { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #000 !important; }
-            .print-text-dark { color: #0f172a !important; }
-            .print-text-muted { color: #64748b !important; }
+            .print-bg-white { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
             .print-break-avoid { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
-            canvas { min-height: 250px !important; }
         }
     </style>
 </head>
@@ -52,13 +39,30 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // =====================================================================
+        // PASSO 4: COLE SUAS CHAVES DO FIREBASE AQUI
+        // Substitua os valores abaixo pelas chaves geradas no Console do Firebase
+        // =====================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJJX95TGZD9neKRWuu8HjedZKKRie5Uxw",
+  authDomain: "gtsae-haco.firebaseapp.com",
+  projectId: "gtsae-haco",
+  storageBucket: "gtsae-haco.firebasestorage.app",
+  messagingSenderId: "177895085134",
+  appId: "1:177895085134:web:40731911ad0a47bf7edf1f"
+        };
+
+        // Inicialização do Firebase (Automática se a chave for alterada)
+        let dbFS = null;
+        if (firebaseConfig.apiKey !== "COLE_AQUI_SUA_API_KEY") {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            dbFS = firebase.firestore();
+        }
+
         const { useState, useEffect, useRef } = React;
+        Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter';
 
-        // Configuração do Chart.js
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.font.family = 'Inter';
-
-        // --- ÍCONES SÓBRIOS ---
+        // --- ÍCONES ---
         const Icons = {
             Shield: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
             Dashboard: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
@@ -68,61 +72,42 @@
             Back: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>,
             Save: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
             Pdf: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
-            Trash: ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Trash: ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Cloud: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
+            Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
         };
 
-        // --- COMPONENTE DE GRÁFICOS ---
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
+            const chartRef = useRef(null); const chartInstance = useRef(null);
             React.useEffect(() => {
                 if (chartInstance.current) chartInstance.current.destroy();
-                
-                const isPrinting = window.matchMedia('print').matches;
-                if (isPrinting) {
-                    Chart.defaults.color = '#334155'; 
-                } else {
-                    Chart.defaults.color = '#94a3b8'; 
-                }
-
-                const ctx = chartRef.current.getContext('2d');
-                chartInstance.current = new Chart(ctx, { type, data, options });
+                Chart.defaults.color = window.matchMedia('print').matches ? '#334155' : '#94a3b8';
+                chartInstance.current = new Chart(chartRef.current.getContext('2d'), { type, data, options });
                 return () => { if (chartInstance.current) chartInstance.current.destroy(); };
             }, [data, options, type]);
             return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
         };
 
-        // --- ALGORITMO DE QUEBRA DE TEXTO (NOVO - EXATAMENTE COMO NO PDF) ---
-        // Quebra estrita a cada ~14 caracteres para garantir que as palavras formem uma torre legível sob cada barra
         const wrapText = (text, maxLength = 14) => {
-            const words = text.split(' ');
-            let lines = [];
-            let currentLine = '';
-            
-            words.forEach(word => {
-                if ((currentLine + word).length > maxLength) {
-                    if (currentLine.trim()) lines.push(currentLine.trim());
-                    currentLine = word + ' ';
-                } else {
-                    currentLine += word + ' ';
-                }
+            const words = text.split(' '); let lines = []; let currentLine = '';
+            words.forEach(w => {
+                if ((currentLine + w).length > maxLength) { if (currentLine.trim()) lines.push(currentLine.trim()); currentLine = w + ' '; } 
+                else currentLine += w + ' ';
             });
-            if(currentLine.trim()) lines.push(currentLine.trim());
-            return lines;
+            if(currentLine.trim()) lines.push(currentLine.trim()); return lines;
         };
 
-        // --- DADOS DO SISTEMA ---
-        const AVALIADORES = [
-            "Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", 
-            "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"
-        ];
-
+        const AVALIADORES = ["Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"];
+        
+        // Períodos com 2026 e 2027 para testar o filtro anual
         const PERIODOS = [
             { id: '2026-08', label: '15/08/2026 a 14/09/2026', short: 'Ago/Set' },
             { id: '2026-09', label: '15/09/2026 a 14/10/2026', short: 'Set/Out' },
             { id: '2026-10', label: '15/10/2026 a 14/11/2026', short: 'Out/Nov' },
             { id: '2026-11', label: '15/11/2026 a 14/12/2026', short: 'Nov/Dez' },
-            { id: '2026-12', label: '15/12/2026 a 14/01/2027', short: 'Dez/Jan' }
+            { id: '2026-12', label: '15/12/2026 a 14/01/2027', short: 'Dez/Jan' },
+            { id: '2027-01', label: '15/01/2027 a 14/02/2027', short: 'Jan/Fev' },
+            { id: '2027-02', label: '15/02/2027 a 14/03/2027', short: 'Fev/Mar' }
         ];
 
         const PERGUNTAS_AUDITORIA = [
@@ -160,68 +145,87 @@
             { id: 32, sec: "Avaliação de Enfermagem", text: "As Anotações da SRPA encontram-se devidamente carimbadas e assinadas?" }
         ];
 
-        // --- MOTOR ANALÍTICO ---
         const calculateStats = (records) => {
             const qStats = PERGUNTAS_AUDITORIA.map(q => {
                 let sim = 0, nao = 0, na = 0;
                 records.forEach(r => {
-                    if(r.answers[q.id] === 'SIM') sim++; 
-                    else if(r.answers[q.id] === 'NÃO') nao++; 
-                    else if(r.answers[q.id] === 'NA') na++;
+                    if(r.answers[q.id] === 'SIM') sim++; else if(r.answers[q.id] === 'NÃO') nao++; else if(r.answers[q.id] === 'NA') na++;
                 });
                 const totalValido = sim + nao;
-                const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
-                const pctFalta = totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0; 
-                return { ...q, sim, nao, na, pct, pctFalta, totalValido };
+                return { ...q, sim, nao, na, pct: totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0, pctFalta: totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0, totalValido };
             });
-
-            let totalSimGeral = 0, totalNaoGeral = 0;
-            qStats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
-            const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
-            const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
-            
-            return { qStats, globalPct, totalSimGeral, totalNaoGeral, sections };
+            let tSim = 0, tNao = 0; qStats.forEach(s => { tSim += s.sim; tNao += s.nao; });
+            return { qStats, globalPct: (tSim + tNao) > 0 ? Math.round((tSim / (tSim + tNao)) * 100) : 0, totalSimGeral: tSim, totalNaoGeral: tNao, sections: [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))] };
         };
 
-        // --- APLICAÇÃO PRINCIPAL ---
         const App = () => {
-            const [db, setDb] = useState(() => {
-                const saved = localStorage.getItem('auditoria_gtsae_haco');
-                return saved ? JSON.parse(saved) : { internados: {}, records: [] };
-            });
+            const [db, setDb] = useState({ internados: {}, records: [] });
+            const [isCloud, setIsCloud] = useState(false);
 
-            React.useEffect(() => { localStorage.setItem('auditoria_gtsae_haco', JSON.stringify(db)); }, [db]);
+            // SINCRONIZAÇÃO HÍBRIDA (FIREBASE OU LOCALSTORAGE)
+            useEffect(() => {
+                if (dbFS) {
+                    setIsCloud(true);
+                    const unsubRecords = dbFS.collection('records').onSnapshot(snap => {
+                        const recs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setDb(prev => ({ ...prev, records: recs }));
+                    });
+                    const unsubInternados = dbFS.collection('internados').onSnapshot(snap => {
+                        const ints = {}; snap.docs.forEach(doc => { ints[doc.id] = doc.data(); });
+                        setDb(prev => ({ ...prev, internados: ints }));
+                    });
+                    return () => { unsubRecords(); unsubInternados(); };
+                } else {
+                    setIsCloud(false);
+                    const saved = localStorage.getItem('auditoria_gtsae_haco');
+                    if (saved) setDb(JSON.parse(saved));
+                }
+            }, []);
+
+            useEffect(() => {
+                if (!dbFS) localStorage.setItem('auditoria_gtsae_haco', JSON.stringify(db));
+            }, [db]);
 
             const [view, setView] = useState('DASHBOARD'); 
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
 
+            // Ações de Escrita Adaptativas
             const savePatientsCount = (periodId, sector, count) => {
-                setDb(prev => ({ ...prev, internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: parseInt(count) || 0 } } }));
+                const val = parseInt(count) || 0;
+                if (dbFS) dbFS.collection('internados').doc(periodId).set({ [sector]: val }, { merge: true });
+                else setDb(prev => ({ ...prev, internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: val } } }));
             };
 
             const createNewRecord = (periodId, sector) => {
-                const newRecord = { id: Date.now().toString(), periodId, sector, prontuario: '', auditor: AVALIADORES[0], date: new Date().toISOString().split('T')[0], answers: {} };
-                setDb(prev => ({ ...prev, records: [...prev.records, newRecord] }));
-                setSelectedRecord(newRecord.id);
-                setView('AVALIACAO');
+                const newRecord = { periodId, sector, prontuario: '', auditor: AVALIADORES[0], date: new Date().toISOString().split('T')[0], answers: {} };
+                if (dbFS) {
+                    dbFS.collection('records').add(newRecord).then(docRef => { setSelectedRecord(docRef.id); setView('AVALIACAO'); });
+                } else {
+                    newRecord.id = Date.now().toString();
+                    setDb(prev => ({ ...prev, records: [...prev.records, newRecord] }));
+                    setSelectedRecord(newRecord.id); setView('AVALIACAO');
+                }
             };
 
             const updateRecordMeta = (recordId, field, value) => {
-                setDb(prev => ({ ...prev, records: prev.records.map(r => r.id === recordId ? { ...r, [field]: value } : r) }));
+                if (dbFS) dbFS.collection('records').doc(recordId).update({ [field]: value });
+                else setDb(prev => ({ ...prev, records: prev.records.map(r => r.id === recordId ? { ...r, [field]: value } : r) }));
             };
 
             const answerQuestion = (recordId, questionId, value) => {
-                setDb(prev => ({ ...prev, records: prev.records.map(r => r.id === recordId ? { ...r, answers: { ...r.answers, [questionId]: value } } : r) }));
+                if (dbFS) dbFS.collection('records').doc(recordId).set({ answers: { [questionId]: value } }, { merge: true });
+                else setDb(prev => ({ ...prev, records: prev.records.map(r => r.id === recordId ? { ...r, answers: { ...r.answers, [questionId]: value } } : r) }));
             };
 
             const deleteRecord = (recordId) => {
                 if(window.confirm("Confirmar exclusão?")) {
-                    setDb(prev => ({ ...prev, records: prev.records.filter(r => r.id !== recordId) }));
+                    if (dbFS) dbFS.collection('records').doc(recordId).delete();
+                    else setDb(prev => ({ ...prev, records: prev.records.filter(r => r.id !== recordId) }));
                 }
             };
 
-            // --- GRÁFICOS (FIXADOS E CORRIGIDOS) ---
+            // Gráficos
             const renderAmostragemChart = (internados, avaliados, setor, labelPeriodo) => {
                 const data = {
                     labels: [''], 
@@ -236,33 +240,22 @@
                         legend: { position: 'top', align: 'start', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } },
                         title: { display: true, text: `PACIENTES INTERNADOS NA ${setor}`, align: 'start', font: { size: 12, weight: 'bold' }, color: '#94a3b8' }
                     },
-                    scales: { 
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { stepSize: 1 } }, 
-                        x: { grid: { display: false } } 
-                    }
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
                 };
                 return (
                     <div className="bg-slate-800 p-5 rounded-md border border-slate-700 shadow flex flex-col h-[300px] print-bg-white print-break-avoid">
                         <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1 print-text-muted">AVALIAÇÃO DA SISTEMATIZAÇÃO DA ASSISTÊNCIA DE ENFERMAGEM (MÉTODOS-PRONTUÁRIO)</div>
-                        <div className="flex-1"><ChartComponent type="bar" data={data} options={options} height="100%" /></div>
+                        <div className="flex-1"><ChartComponent type="bar" data={data} options={options} /></div>
                     </div>
                 );
             };
 
             const renderFaltasChart = (qStats, section) => {
                 const qs = qStats.filter(q => q.sec === section);
-                
                 const data = {
-                    // Aqui usamos o wrapText com 14 caracteres para garantir a quebra de linha sem inclinar
-                    labels: qs.map(q => wrapText(q.text, 14)), 
-                    datasets: [{
-                        label: 'Porcentagem de Faltas',
-                        data: qs.map(q => q.pctFalta),
-                        backgroundColor: '#4285F4', // Azul Padrão
-                        barPercentage: 0.5 // Barras mais finas para ajudar na legibilidade
-                    }]
+                    labels: qs.map(q => wrapText(q.text, 14)), // Quebra empilhada em 14 caracteres
+                    datasets: [{ label: 'Porcentagem de Faltas', data: qs.map(q => q.pctFalta), backgroundColor: '#4285F4', barPercentage: 0.5 }]
                 };
-                
                 const options = {
                     responsive: true, maintainAspectRatio: false,
                     plugins: { 
@@ -272,30 +265,17 @@
                         tooltip: { callbacks: { title: (ctx) => `Q${qs[ctx[0].dataIndex].id}: ${qs[ctx[0].dataIndex].text}` } }
                     },
                     scales: { 
-                        y: { 
-                            beginAtZero: true, max: 100, 
-                            grid: { color: 'rgba(255,255,255,0.05)' }, 
-                            ticks: { callback: function(value) { return value.toFixed(2); } } 
-                        }, 
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { 
-                                font: { size: 9 }, 
-                                maxRotation: 0, // <--- GARANTIA: ROTAÇÃO ZERO PARA EMPILHAR NA HORIZONTAL
-                                minRotation: 0, // <--- GARANTIA: ROTAÇÃO ZERO PARA EMPILHAR NA HORIZONTAL
-                                autoSkip: false 
-                            } 
-                        } 
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } }, 
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, minRotation: 0, autoSkip: false } } // Rotação ZERO para empilhar
                     }
                 };
                 return (
-                    <div key={section} className="bg-slate-800 p-6 rounded-md border border-slate-700 shadow flex flex-col h-[500px] print-bg-white print-break-avoid w-full">
-                        <div className="flex-1"><ChartComponent type="bar" data={data} options={options} height="100%" /></div>
+                    <div key={section} className="bg-slate-800 p-6 rounded-md border border-slate-700 shadow flex flex-col h-[480px] print-bg-white print-break-avoid w-full">
+                        <div className="flex-1"><ChartComponent type="bar" data={data} options={options} /></div>
                     </div>
                 );
             };
 
-            // --- TELAS ---
             const renderDashboard = () => {
                 const { globalPct, totalNaoGeral } = calculateStats(db.records);
                 return (
@@ -305,9 +285,14 @@
                                 <h1 className="text-2xl font-bold text-white tracking-tight">Painel de Gestão SAE</h1>
                                 <p className="text-sm text-slate-400 mt-1">GT SAE HACO - Hospital de Aeronáutica de Canoas</p>
                             </div>
-                            <button onClick={() => setView('COMPILADO_ANUAL')} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                                <Icons.Chart size={18}/> Relatório Anual
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <span className={`text-[10px] font-bold uppercase px-3 py-1.5 rounded-full flex items-center gap-2 ${isCloud ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+                                    {isCloud ? <><Icons.Cloud/> Nuvem (Online)</> : <><Icons.Local/> Local (Offline)</>}
+                                </span>
+                                <button onClick={() => setView('COMPILADO_ANUAL')} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                                    <Icons.Chart size={18}/> Relatório Anual
+                                </button>
+                            </div>
                         </header>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -325,43 +310,34 @@
                             </div>
                         </div>
 
-                        <div>
-                            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-4">Ciclos de Auditoria</h2>
-                            <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-900 border-b border-slate-700">
-                                        <tr>
-                                            <th className="p-4 font-semibold text-slate-400">Período</th>
-                                            <th className="p-4 font-semibold text-slate-400 text-center">Meta UPI</th>
-                                            <th className="p-4 font-semibold text-slate-400 text-center">Meta UTI</th>
-                                            <th className="p-4 font-semibold text-slate-400 text-right">Ação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-700">
-                                        {PERIODOS.map(p => {
-                                            const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
-                                            const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
-                                            const fUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
-                                            const fUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
+                        <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-900 border-b border-slate-700">
+                                    <tr>
+                                        <th className="p-4 font-semibold text-slate-400">Período de Avaliação</th>
+                                        <th className="p-4 font-semibold text-slate-400 text-center">Meta UPI</th>
+                                        <th className="p-4 font-semibold text-slate-400 text-center">Meta UTI</th>
+                                        <th className="p-4 font-semibold text-slate-400 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700">
+                                    {PERIODOS.map(p => {
+                                        const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
+                                        const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
+                                        const fUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
+                                        const fUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
 
-                                            return (
-                                                <tr key={p.id} className="hover:bg-slate-700/50 transition-colors">
-                                                    <td className="p-4 font-medium text-slate-200">{p.label}</td>
-                                                    <td className="p-4 text-center">
-                                                        <span className={`px-2.5 py-1 rounded text-xs font-medium ${fUPI >= metaUPI && metaUPI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUPI} / {metaUPI}</span>
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                        <span className={`px-2.5 py-1 rounded text-xs font-medium ${fUTI >= metaUTI && metaUTI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUTI} / {metaUTI}</span>
-                                                    </td>
-                                                    <td className="p-4 text-right">
-                                                        <button onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Abrir Pasta</button>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        return (
+                                            <tr key={p.id} className="hover:bg-slate-700/50 transition-colors">
+                                                <td className="p-4 font-medium text-slate-200">{p.label}</td>
+                                                <td className="p-4 text-center"><span className={`px-2.5 py-1 rounded text-xs font-medium ${fUPI >= metaUPI && metaUPI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUPI} / {metaUPI}</span></td>
+                                                <td className="p-4 text-center"><span className={`px-2.5 py-1 rounded text-xs font-medium ${fUTI >= metaUTI && metaUTI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUTI} / {metaUTI}</span></td>
+                                                <td className="p-4 text-right"><button onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Abrir Pasta</button></td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 );
@@ -380,9 +356,7 @@
                         <header className="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setView('DASHBOARD')} className="text-slate-400 hover:text-white transition-colors"><Icons.Back /></button>
-                                <div>
-                                    <h1 className="text-xl font-bold text-white">Auditoria: {p.label}</h1>
-                                </div>
+                                <div><h1 className="text-xl font-bold text-white">Auditoria: {p.label}</h1></div>
                             </div>
                             <button onClick={() => setView('COMPILADO_PERIODO')} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
                                 <Icons.Chart size={16}/> Relatório do Mês
@@ -393,29 +367,16 @@
                             <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
                                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 border-l-2 border-blue-500 pl-2">Metas UPI</div>
                                 <div className="flex gap-4 items-end">
-                                    <div className="flex-1">
-                                        <label className="text-xs text-slate-400 block mb-1">Pacientes Internados</label>
-                                        <input type="number" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500" value={intUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="text-xs text-slate-400 block mb-1">Amostra Mín (40%)</label>
-                                        <div className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-slate-400 font-medium">{mUPI}</div>
-                                    </div>
+                                    <div className="flex-1"><label className="text-xs text-slate-400 block mb-1">Pacientes Internados</label><input type="number" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500" value={intUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} /></div>
+                                    <div className="flex-1"><label className="text-xs text-slate-400 block mb-1">Amostra Mín (40%)</label><div className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-slate-400 font-medium">{mUPI}</div></div>
                                 </div>
                                 <button onClick={() => createNewRecord(p.id, 'UPI')} className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-medium transition-colors">Nova Auditoria UPI</button>
                             </div>
-
                             <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
                                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 border-l-2 border-red-500 pl-2">Metas UTI</div>
                                 <div className="flex gap-4 items-end">
-                                    <div className="flex-1">
-                                        <label className="text-xs text-slate-400 block mb-1">Pacientes Internados</label>
-                                        <input type="number" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500" value={intUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="text-xs text-slate-400 block mb-1">Amostra Mín (40%)</label>
-                                        <div className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-slate-400 font-medium">{mUTI}</div>
-                                    </div>
+                                    <div className="flex-1"><label className="text-xs text-slate-400 block mb-1">Pacientes Internados</label><input type="number" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500" value={intUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} /></div>
+                                    <div className="flex-1"><label className="text-xs text-slate-400 block mb-1">Amostra Mín (40%)</label><div className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-slate-400 font-medium">{mUTI}</div></div>
                                 </div>
                                 <button onClick={() => createNewRecord(p.id, 'UTI')} className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm font-medium transition-colors">Nova Auditoria UTI</button>
                             </div>
@@ -424,13 +385,7 @@
                         <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden mt-6">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-slate-900 border-b border-slate-700">
-                                    <tr>
-                                        <th className="p-4 font-semibold text-slate-400">Setor</th>
-                                        <th className="p-4 font-semibold text-slate-400">Prontuário</th>
-                                        <th className="p-4 font-semibold text-slate-400">Auditor</th>
-                                        <th className="p-4 font-semibold text-slate-400">Progresso</th>
-                                        <th className="p-4 font-semibold text-slate-400 text-right">Ações</th>
-                                    </tr>
+                                    <tr><th className="p-4 font-semibold text-slate-400">Setor</th><th className="p-4 font-semibold text-slate-400">Prontuário</th><th className="p-4 font-semibold text-slate-400">Auditor</th><th className="p-4 font-semibold text-slate-400">Progresso</th><th className="p-4 font-semibold text-slate-400 text-right">Ações</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700">
                                     {recs.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-slate-500">Nenhuma avaliação iniciada.</td></tr>}
@@ -441,16 +396,8 @@
                                                 <td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold rounded ${r.sector==='UPI' ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'}`}>{r.sector}</span></td>
                                                 <td className="p-4 font-medium text-slate-200">{r.prontuario || '-'}</td>
                                                 <td className="p-4 text-slate-400">{r.auditor}</td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-24 h-1.5 bg-slate-900 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{width: `${progress}%`}}></div></div>
-                                                        <span className="text-[10px] text-slate-400">{progress}%</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-right flex justify-end gap-3">
-                                                    <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Editar</button>
-                                                    <button onClick={() => deleteRecord(r.id)} className="text-slate-500 hover:text-red-500"><Icons.Trash /></button>
-                                                </td>
+                                                <td className="p-4"><div className="flex items-center gap-2"><div className="w-24 h-1.5 bg-slate-900 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{width: `${progress}%`}}></div></div><span className="text-[10px] text-slate-400">{progress}%</span></div></td>
+                                                <td className="p-4 text-right flex justify-end gap-3"><button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Editar</button><button onClick={() => deleteRecord(r.id)} className="text-slate-500 hover:text-red-500"><Icons.Trash /></button></td>
                                             </tr>
                                         )
                                     })}
@@ -479,20 +426,9 @@
                         </header>
 
                         <div className="bg-slate-800 p-5 rounded-md border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Nº Prontuário</label>
-                                <input className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Auditor</label>
-                                <select className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
-                                    {AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Data</label>
-                                <input type="date" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
-                            </div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Nº Prontuário</label><input className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} /></div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Auditor</label><select className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>{AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}</select></div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Data</label><input type="date" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} /></div>
                         </div>
 
                         <div className="space-y-8">
@@ -536,23 +472,14 @@
                         <header className="flex justify-between items-end border-b border-slate-700 pb-4 mb-6">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setView('PERIODO')} className="text-slate-400 hover:text-white transition-colors no-print"><Icons.Back /></button>
-                                <div>
-                                    <h1 className="text-2xl font-bold text-white print-text-dark">Relatório de Faltas do Período</h1>
-                                    <p className="text-sm text-slate-400 mt-1">{p.label}</p>
-                                </div>
+                                <div><h1 className="text-2xl font-bold text-white print-text-dark">Relatório de Faltas do Período</h1><p className="text-sm text-slate-400 mt-1">{p.label}</p></div>
                             </div>
-                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print">
-                                <Icons.Pdf size={16}/> Gerar PDF
-                            </button>
+                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print"><Icons.Pdf size={16}/> Gerar PDF</button>
                         </header>
-
-                        {/* GRÁFICOS IDÊNTICOS AO PDF - AMOSTRAGEM */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {renderAmostragemChart(intUPI, recsUPI.length, 'UPI', p.label)}
                             {renderAmostragemChart(intUTI, recsUTI.length, 'UTI', p.label)}
                         </div>
-
-                        {/* GRÁFICOS IDÊNTICOS AO PDF - FALTAS POR ETAPA */}
                         <div className="grid grid-cols-1 gap-6 pt-4">
                             {sections.map(sec => renderFaltasChart(qStats, sec))}
                         </div>
@@ -561,10 +488,17 @@
             };
 
             const renderCompiladoAnual = () => {
-                const { qStats, sections } = calculateStats(db.records);
+                // LÓGICA DE FILTRO ANUAL
+                const anosDisponiveis = [...new Set(PERIODOS.map(p => p.id.split('-')[0]))];
+                const [anoSelecionado, setAnoSelecionado] = useState(anosDisponiveis[0]);
+
+                const periodosDoAno = PERIODOS.filter(p => p.id.startsWith(anoSelecionado));
+                const recordsDoAno = db.records.filter(r => periodosDoAno.some(p => p.id === r.periodId));
+                
+                const { qStats, sections } = calculateStats(recordsDoAno);
 
                 let totalIntUPI = 0, totalIntUTI = 0, totalAvUPI = 0, totalAvUTI = 0;
-                PERIODOS.forEach(p => {
+                periodosDoAno.forEach(p => {
                     totalIntUPI += parseInt(db.internados[p.id]?.UPI) || 0;
                     totalIntUTI += parseInt(db.internados[p.id]?.UTI) || 0;
                     totalAvUPI += db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
@@ -578,19 +512,21 @@
                                 <button onClick={() => setView('DASHBOARD')} className="text-slate-400 hover:text-white transition-colors no-print"><Icons.Back /></button>
                                 <div>
                                     <h1 className="text-2xl font-bold text-white print-text-dark">Relatório Anual Consolidado</h1>
-                                    <p className="text-sm text-slate-400 mt-1">Evolução de Qualidade Assistencial GT SAE HACO</p>
+                                    <div className="flex items-center gap-4 mt-2">
+                                        <p className="text-sm text-slate-400">GT SAE HACO</p>
+                                        <select className="bg-slate-800 border border-slate-700 text-white text-xs rounded px-2 py-1 outline-none no-print" value={anoSelecionado} onChange={(e) => setAnoSelecionado(e.target.value)}>
+                                            {anosDisponiveis.map(a => <option key={a} value={a}>Ano {a}</option>)}
+                                        </select>
+                                        <span className="hidden print:inline print-text-muted font-bold ml-2"> - Exercício {anoSelecionado}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print">
-                                <Icons.Pdf size={16}/> Gerar PDF
-                            </button>
+                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print"><Icons.Pdf size={16}/> Gerar PDF</button>
                         </header>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {renderAmostragemChart(totalIntUPI, totalAvUPI, 'UPI', '(Acumulado Anual)')}
-                            {renderAmostragemChart(totalIntUTI, totalAvUTI, 'UTI', '(Acumulado Anual)')}
+                            {renderAmostragemChart(totalIntUPI, totalAvUPI, 'UPI', `(Acumulado ${anoSelecionado})`)}
+                            {renderAmostragemChart(totalIntUTI, totalAvUTI, 'UTI', `(Acumulado ${anoSelecionado})`)}
                         </div>
-
                         <div className="grid grid-cols-1 gap-6 pt-4">
                             {sections.map(sec => renderFaltasChart(qStats, sec))}
                         </div>
@@ -600,30 +536,17 @@
 
             return (
                 <div className="flex min-h-screen">
-                    {/* SIDEBAR CORPORATIVA */}
                     <div className="w-16 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col no-print shrink-0">
                         <div className="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-800">
-                            <Icons.Shield size={24} />
+                            <Icons.Shield size={24} className="text-blue-500" />
                             <span className="ml-3 font-bold text-white hidden md:block tracking-wide">GT SAE HACO</span>
                         </div>
                         <div className="p-4 flex flex-col gap-2">
-                            <button onClick={() => setView('DASHBOARD')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                                <Icons.Dashboard /> <span className="hidden md:block text-sm font-medium">Dashboard</span>
-                            </button>
-                            {selectedPeriod && (
-                                <button onClick={() => setView('PERIODO')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                                    <Icons.Folder /> <span className="hidden md:block text-sm font-medium">Período Ativo</span>
-                                </button>
-                            )}
-                            {selectedRecord && (
-                                <button onClick={() => setView('AVALIACAO')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'AVALIACAO' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                                    <Icons.FileEdit /> <span className="hidden md:block text-sm font-medium">Auditoria Atual</span>
-                                </button>
-                            )}
+                            <button onClick={() => setView('DASHBOARD')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Icons.Dashboard /> <span className="hidden md:block text-sm font-medium">Dashboard</span></button>
+                            {selectedPeriod && <button onClick={() => setView('PERIODO')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Icons.Folder /> <span className="hidden md:block text-sm font-medium">Período Ativo</span></button>}
+                            {selectedRecord && <button onClick={() => setView('AVALIACAO')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'AVALIACAO' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Icons.FileEdit /> <span className="hidden md:block text-sm font-medium">Auditoria</span></button>}
                         </div>
                     </div>
-
-                    {/* CONTEÚDO CENTRAL */}
                     <div className="flex-1 bg-slate-950 overflow-y-auto h-screen p-4 md:p-8 custom-scrollbar">
                         {view === 'DASHBOARD' && renderDashboard()}
                         {view === 'PERIODO' && renderPeriodo()}
