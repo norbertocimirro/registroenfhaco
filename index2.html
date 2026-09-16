@@ -27,7 +27,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // Configuração Global do Chart.js para Dark Mode
+        // --- CONFIGURAÇÃO GLOBAL DOS GRÁFICOS ---
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = 'Inter';
 
@@ -89,10 +89,11 @@
             Download: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
             Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-            Chart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Chart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+            ClipboardCheck: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 11 16 15 12"/></svg>
         };
 
-        // --- COMPONENTE DE GRÁFICO (Wrapper React para Chart.js) ---
+        // --- COMPONENTE DE GRÁFICO (Wrapper Chart.js) ---
         const ChartComponent = ({ type, data, options, height = "250px" }) => {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -112,9 +113,8 @@
             return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
         };
 
-        // --- FUNÇÕES ANALÍTICAS ESTATÍSTICAS ---
+        // --- MOTOR ANALÍTICO ---
         const calculateStats = (recordsToAnalyze) => {
-            // Stats por Pergunta
             const qStats = PERGUNTAS_AUDITORIA.map(q => {
                 let sim = 0, nao = 0, na = 0;
                 recordsToAnalyze.forEach(r => {
@@ -123,25 +123,17 @@
                 });
                 const totalValido = sim + nao;
                 const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
-                return { ...q, sim, nao, na, pct, totalValido };
+                const pctFalta = totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0; // Cálculo de "Porcentagem de Faltas"
+                return { ...q, sim, nao, na, pct, pctFalta, totalValido };
             });
 
-            // Global
             let totalSimGeral = 0, totalNaoGeral = 0;
             qStats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
             const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
 
-            // Por Seção
             const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
-            const secStats = sections.map(sec => {
-                const qs = qStats.filter(q => q.sec === sec);
-                let sSim = 0, sNao = 0;
-                qs.forEach(q => { sSim += q.sim; sNao += q.nao; });
-                const sPct = (sSim + sNao) > 0 ? Math.round((sSim / (sSim + sNao)) * 100) : 0;
-                return { section: sec, pct: sPct };
-            });
-
-            return { qStats, globalPct, totalSimGeral, totalNaoGeral, secStats };
+            
+            return { qStats, globalPct, totalSimGeral, totalNaoGeral, sections };
         };
 
         // --- SISTEMA PRINCIPAL ---
@@ -154,7 +146,6 @@
             useEffect(() => { localStorage.setItem('csae_haco_db', JSON.stringify(db)); }, [db]);
 
             const [view, setView] = useState('DASHBOARD'); 
-            // Views: DASHBOARD, PERIODO, AVALIACAO, COMPILADO_PERIODO, COMPILADO_ANUAL
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
 
@@ -188,7 +179,6 @@
                 }
             };
 
-            // Backup
             const exportData = () => {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
                 const a = document.createElement('a');
@@ -210,7 +200,69 @@
                 }
             };
 
-            // --- TELAS ---
+            // --- COMPONENTES DE GRÁFICOS ESPECÍFICOS (Baseados no PDF) ---
+
+            const renderAmostragemChart = (internados, avaliados, title) => {
+                const data = {
+                    labels: [`Internados`, `Avaliados`],
+                    datasets: [{
+                        data: [internados || 0, avaliados || 0],
+                        backgroundColor: ['#3b82f6', '#ef4444'], // Azul (Internados) e Vermelho (Avaliados)
+                        borderRadius: 4
+                    }]
+                };
+                const options = {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { precision: 0 } }, x: { grid: { display: false } } }
+                };
+                return (
+                    <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{title}</div>
+                        <div className="flex-1 min-h-[250px]">
+                            <ChartComponent type="bar" data={data} options={options} height="100%" />
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderFaltasChart = (qStats, section) => {
+                const qs = qStats.filter(q => q.sec === section);
+                const data = {
+                    labels: qs.map(q => `Q${q.id}`),
+                    datasets: [{
+                        label: 'Porcentagem de Faltas (%)',
+                        data: qs.map(q => q.pctFalta),
+                        backgroundColor: '#3b82f6', // Barras azuis conforme o PDF
+                        borderRadius: 4
+                    }]
+                };
+                const options = {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (ctx) => {
+                                    const index = ctx[0].dataIndex;
+                                    return `Q${qs[index].id}: ${qs[index].text}`; // Tooltip inteligente com a pergunta inteira
+                                }
+                            }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } }
+                };
+                return (
+                    <div key={section} className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{section} - Porcentagem de Faltas</div>
+                        <div className="flex-1 min-h-[200px]">
+                            <ChartComponent type="bar" data={data} options={options} height="100%" />
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- TELAS PRINCIPAIS ---
 
             const renderDashboard = () => {
                 const { globalPct, totalNaoGeral } = calculateStats(db.records);
@@ -234,10 +286,8 @@
                             </div>
                         </header>
 
-                        {/* Visão Geral (Kpis) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl relative overflow-hidden">
-                                <div className="absolute -right-4 -bottom-4 opacity-5"><Icon.Check /></div>
                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Conformidade Anual</div>
                                 <div className="text-5xl font-black text-blue-500">{globalPct}%</div>
                             </div>
@@ -251,7 +301,6 @@
                             </div>
                         </div>
 
-                        {/* Ciclos de Auditoria */}
                         <div className="space-y-6">
                             <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Ciclos de Auditoria (Períodos)</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -262,11 +311,7 @@
                                     const feitosUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
 
                                     return (
-                                        <button 
-                                            key={p.id} 
-                                            onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }}
-                                            className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 hover:border-blue-600 transition-all text-left flex justify-between items-center group shadow-lg"
-                                        >
+                                        <button key={p.id} onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 hover:border-blue-600 transition-all text-left flex justify-between items-center group shadow-lg">
                                             <div>
                                                 <div className="text-xl font-black text-white">{p.label}</div>
                                                 <div className="flex gap-4 mt-3">
@@ -342,7 +387,7 @@
                             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                 <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Prontuários Avaliados</h2>
                                 <button onClick={() => setView('COMPILADO_PERIODO')} className="px-6 py-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg">
-                                    <Icon.Chart /> Ver Compilado e Gráficos do Período
+                                    <Icon.Chart /> Painel Analytics do Período
                                 </button>
                             </div>
 
@@ -379,6 +424,15 @@
                 const progress = Math.round((Object.keys(rec.answers).length / 32) * 100);
                 const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
 
+                const generateReport = () => {
+                    const naoAnswers = PERGUNTAS_AUDITORIA.filter(q => rec.answers[q.id] === 'NÃO');
+                    let report = `*RELATÓRIO DE AUDITORIA SAE - HACO*\nSetor: ${rec.sector} | Prontuário: ${rec.prontuario || 'Não iden.'}\nAuditor: ${rec.auditor}\n-----------------------------------\n*NÃO CONFORMIDADES:*\n\n`;
+                    if (naoAnswers.length === 0) report += "Nenhuma não conformidade encontrada. Padrão Ouro.";
+                    else naoAnswers.forEach(q => { report += `[${q.sec}] - ${q.text}\n`; });
+                    navigator.clipboard.writeText(report);
+                    alert("Relatório de Não Conformidades copiado!");
+                };
+
                 return (
                     <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
                         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-slate-800 pb-8 sticky top-0 bg-[#0f172a] z-10 pt-4">
@@ -392,22 +446,25 @@
                                     </div>
                                 </div>
                             </div>
+                            <button onClick={generateReport} className="px-6 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 flex items-center gap-2">
+                                <Icon.ClipboardCheck /> Copiar Relatório
+                            </button>
                         </header>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Nº Prontuário</label>
-                                <input className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
+                                <input className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
                             </div>
                             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Auditor Responsável</label>
-                                <select className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
+                                <select className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
                                     {AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}
                                 </select>
                             </div>
                             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Data da Auditoria</label>
-                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
+                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
                             </div>
                         </div>
 
@@ -421,8 +478,8 @@
                                             {qs.map(q => (
                                                 <div key={q.id} className="bg-slate-900 p-6 lg:p-8 rounded-[2rem] border border-slate-800 flex flex-col lg:flex-row justify-between lg:items-center gap-6 hover:border-slate-600 transition-colors">
                                                     <div className="flex gap-6 items-start">
-                                                        <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center font-black text-slate-500 shrink-0 border border-slate-800">{q.id}</div>
-                                                        <p className="text-sm md:text-base font-semibold text-slate-200 leading-relaxed mt-1">{q.text}</p>
+                                                        <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center font-black text-slate-500 shrink-0 border border-slate-800">Q{q.id}</div>
+                                                        <p className="text-sm md:text-base font-semibold text-slate-200 mt-1.5">{q.text}</p>
                                                     </div>
                                                     <div className="flex gap-3 bg-slate-950 p-2 rounded-2xl border border-slate-800 shrink-0">
                                                         <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'SIM' ? 'bg-green-600 text-white shadow-lg shadow-green-900/40' : 'text-slate-500 hover:text-green-500'}`}><Icon.Check/> SIM</button>
@@ -442,88 +499,58 @@
 
             const renderCompiladoPeriodo = () => {
                 const p = PERIODOS.find(x => x.id === selectedPeriod);
-                const recs = db.records.filter(r => r.periodId === p.id);
-                const { qStats, globalPct, totalNaoGeral, secStats } = calculateStats(recs);
-
-                // Config dos Gráficos
-                const doughnutData = {
-                    labels: ['Conforme', 'Não Conforme'],
-                    datasets: [{
-                        data: [globalPct, 100 - globalPct],
-                        backgroundColor: ['#3b82f6', '#1e293b'],
-                        borderWidth: 0,
-                        cutout: '80%'
-                    }]
-                };
-
-                const barData = {
-                    labels: secStats.map(s => s.section),
-                    datasets: [{
-                        label: 'Conformidade (%)',
-                        data: secStats.map(s => s.pct),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 8,
-                    }]
-                };
-
-                const barOptions = {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { display: false } }
-                };
+                const internadosUPI = parseInt(db.internados[p.id]?.UPI) || 0;
+                const internadosUTI = parseInt(db.internados[p.id]?.UTI) || 0;
+                const recsUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI');
+                const recsUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI');
+                const recs = [...recsUPI, ...recsUTI];
+                
+                const { qStats, sections } = calculateStats(recs);
 
                 return (
                     <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
                         <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
                             <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
                             <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Compilado do Período</h1>
+                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Analytics do Período</h1>
                                 <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">{p.label}</p>
                             </div>
                         </header>
 
-                        {/* GRÁFICOS DO PERÍODO */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-col items-center justify-center relative">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 w-full text-center">Conformidade Global</div>
-                                <div className="w-48 h-48 relative">
-                                    <ChartComponent type="doughnut" data={doughnutData} options={{cutout: '80%', plugins:{legend:{display:false}}}} height="100%" />
-                                    <div className="absolute inset-0 flex items-center justify-center flex-col mt-2">
-                                        <span className="text-4xl font-black text-white">{globalPct}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl lg:col-span-2 flex flex-col">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Desempenho por Etapa (SAE)</div>
-                                <div className="flex-1 min-h-[200px]">
-                                    <ChartComponent type="bar" data={barData} options={barOptions} height="100%" />
-                                </div>
+                        {/* GRÁFICOS DE AMOSTRAGEM (BASEADOS NO PDF) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {renderAmostragemChart(internadosUPI, recsUPI.length, `Comparativo Internados x Avaliados - UPI`)}
+                            {renderAmostragemChart(internadosUTI, recsUTI.length, `Comparativo Internados x Avaliados - UTI`)}
+                        </div>
+
+                        {/* GRÁFICOS DE PORCENTAGEM DE FALTAS (BASEADOS NO PDF) */}
+                        <div className="space-y-6 pt-6">
+                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Porcentagem de Faltas (Não Conformidades) por Etapa</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {sections.map(sec => renderFaltasChart(qStats, sec))}
                             </div>
                         </div>
 
                         {/* TABELA DE DADOS BRUTOS */}
-                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl">
+                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl mt-10">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse min-w-[800px]">
                                     <thead>
                                         <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                             <th className="p-6 border-b border-slate-800">ID</th>
-                                            <th className="p-6 border-b border-slate-800">Critério Avaliado (Res 736/24)</th>
+                                            <th className="p-6 border-b border-slate-800">Critério Avaliado</th>
                                             <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
                                             <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
-                                            <th className="p-6 border-b border-slate-800 text-center">N/A</th>
                                             <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {qStats.map(s => (
                                             <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                                <td className="p-6 text-sm font-black text-slate-500">{s.id}</td>
+                                                <td className="p-6 text-sm font-black text-slate-500">Q{s.id}</td>
                                                 <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
                                                 <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
                                                 <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
-                                                <td className="p-6 text-center text-sm font-black text-slate-500">{s.na}</td>
                                                 <td className="p-6 text-right">
                                                     <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
                                                         {s.pct}%
@@ -540,15 +567,26 @@
             };
 
             const renderCompiladoAnual = () => {
-                const { qStats, globalPct, totalNaoGeral, secStats } = calculateStats(db.records);
+                // Cálculo Geral
+                const { qStats, globalPct, totalNaoGeral, sections } = calculateStats(db.records);
 
-                // Dados para o Gráfico de Linha (Tendência dos Períodos)
+                // Cálculo Totais de Amostragem Anual
+                let totalIntUPI = 0, totalIntUTI = 0;
+                let totalAvUPI = 0, totalAvUTI = 0;
+
+                PERIODOS.forEach(p => {
+                    totalIntUPI += parseInt(db.internados[p.id]?.UPI) || 0;
+                    totalIntUTI += parseInt(db.internados[p.id]?.UTI) || 0;
+                    totalAvUPI += db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
+                    totalAvUTI += db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
+                });
+
+                // Dados para o Gráfico de Linha (Tendência)
                 const trendLabels = PERIODOS.map(p => p.short);
                 const trendData = PERIODOS.map(p => {
                     const recs = db.records.filter(r => r.periodId === p.id);
                     if(recs.length === 0) return 0;
-                    const stats = calculateStats(recs);
-                    return stats.globalPct;
+                    return calculateStats(recs).globalPct;
                 });
 
                 const lineData = {
@@ -556,15 +594,9 @@
                     datasets: [{
                         label: 'Conformidade Geral (%)',
                         data: trendData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#0f172a',
-                        pointBorderColor: '#3b82f6',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
+                        borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 3, tension: 0.4, fill: true,
+                        pointBackgroundColor: '#0f172a', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 6
                     }]
                 };
 
@@ -574,34 +606,30 @@
                     plugins: { legend: { display: false } }
                 };
 
-                const barData = {
-                    labels: secStats.map(s => s.section),
-                    datasets: [{
-                        label: 'Conformidade Anual (%)',
-                        data: secStats.map(s => s.pct),
-                        backgroundColor: '#10b981',
-                        borderRadius: 8,
-                    }]
-                };
-
                 return (
                     <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
                         <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
                             <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
                             <div>
                                 <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Relatório Anual Consolidado</h1>
-                                <p className="text-green-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Visão Estratégica CSAE</p>
+                                <p className="text-green-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Visão Estratégica CSAE-HACO</p>
                             </div>
                         </header>
 
+                        {/* GRÁFICOS DE AMOSTRAGEM ANUAL */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {renderAmostragemChart(totalIntUPI, totalAvUPI, `Acumulado Anual: Internados x Avaliados - UPI`)}
+                            {renderAmostragemChart(totalIntUTI, totalAvUTI, `Acumulado Anual: Internados x Avaliados - UTI`)}
+                        </div>
+
                         {/* GRÁFICO DE TENDÊNCIA E KPIs GERAIS */}
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 pt-6">
                             <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-col justify-center">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Conformidade Anual</div>
                                 <div className="text-6xl font-black text-green-500">{globalPct}%</div>
                                 <div className="mt-6 space-y-2 border-t border-slate-800 pt-6">
                                     <div className="flex justify-between text-xs font-bold text-slate-400"><span>Prontuários Lidos</span><span className="text-white">{db.records.length}</span></div>
-                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Falhas Encontradas</span><span className="text-red-500">{totalNaoGeral}</span></div>
+                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Total de Falhas</span><span className="text-red-500">{totalNaoGeral}</span></div>
                                 </div>
                             </div>
                             
@@ -613,16 +641,16 @@
                             </div>
                         </div>
 
-                        {/* GRÁFICO DE BARRAS (SEÇÕES ANUAIS) */}
-                        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Desempenho Anual por Etapa do Processo de Enfermagem</div>
-                            <div className="min-h-[250px]">
-                                <ChartComponent type="bar" data={barData} options={{...lineOptions, plugins: { legend: { display: false }}}} height="250px" />
+                        {/* GRÁFICOS DE FALTAS ANUAIS POR ETAPA */}
+                        <div className="space-y-6 pt-6">
+                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Porcentagem de Faltas (Acumulado Anual)</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {sections.map(sec => renderFaltasChart(qStats, sec))}
                             </div>
                         </div>
 
                         {/* TABELA DE DADOS BRUTOS ANUAIS */}
-                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl">
+                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl mt-10">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse min-w-[800px]">
                                     <thead>
@@ -637,7 +665,7 @@
                                     <tbody>
                                         {qStats.map(s => (
                                             <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                                <td className="p-6 text-sm font-black text-slate-500">{s.id}</td>
+                                                <td className="p-6 text-sm font-black text-slate-500">Q{s.id}</td>
                                                 <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
                                                 <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
                                                 <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
