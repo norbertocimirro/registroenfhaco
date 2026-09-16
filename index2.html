@@ -3,27 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSAE HACO - Sistema de Gestão de Auditoria</title>
+    <title>CSAE HACO - Analytics Dashboard</title>
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .animate-fade { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // Configuração Global do Chart.js para Dark Mode
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = 'Inter';
 
         // --- DADOS ESTRUTURAIS ---
         const AVALIADORES = [
@@ -32,11 +38,11 @@
         ];
 
         const PERIODOS = [
-            { id: '2026-08', label: '15/08/2026 a 14/09/2026' },
-            { id: '2026-09', label: '15/09/2026 a 14/10/2026' },
-            { id: '2026-10', label: '15/10/2026 a 14/11/2026' },
-            { id: '2026-11', label: '15/11/2026 a 14/12/2026' },
-            { id: '2026-12', label: '15/12/2026 a 14/01/2027' }
+            { id: '2026-08', label: '15/08/2026 a 14/09/2026', short: 'Ago/Set' },
+            { id: '2026-09', label: '15/09/2026 a 14/10/2026', short: 'Set/Out' },
+            { id: '2026-10', label: '15/10/2026 a 14/11/2026', short: 'Out/Nov' },
+            { id: '2026-11', label: '15/11/2026 a 14/12/2026', short: 'Nov/Dez' },
+            { id: '2026-12', label: '15/12/2026 a 14/01/2027', short: 'Dez/Jan' }
         ];
 
         const PERGUNTAS_AUDITORIA = [
@@ -74,38 +80,88 @@
             { id: 32, sec: "Avaliação/Anotações", text: "As Anotações da SRPA encontram-se devidamente carimbadas e assinadas?" }
         ];
 
-        // --- COMPONENTES UI REUTILIZÁVEIS E ÍCONES (CORRIGIDOS) ---
-        const Icons = {
+        // --- COMPONENTES UI & ÍCONES ---
+        const Icon = {
             Back: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
             Check: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
             X: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
             Minus: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            ClipboardCheck: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 11 16 15 12"/></svg>,
             Download: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
             Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-            Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Chart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         };
 
+        // --- COMPONENTE DE GRÁFICO (Wrapper React para Chart.js) ---
+        const ChartComponent = ({ type, data, options, height = "250px" }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, { type, data, options });
+
+                return () => {
+                    if (chartInstance.current) chartInstance.current.destroy();
+                };
+            }, [data, options, type]);
+
+            return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
+        };
+
+        // --- FUNÇÕES ANALÍTICAS ESTATÍSTICAS ---
+        const calculateStats = (recordsToAnalyze) => {
+            // Stats por Pergunta
+            const qStats = PERGUNTAS_AUDITORIA.map(q => {
+                let sim = 0, nao = 0, na = 0;
+                recordsToAnalyze.forEach(r => {
+                    const a = r.answers[q.id];
+                    if(a === 'SIM') sim++; else if(a === 'NÃO') nao++; else if(a === 'NA') na++;
+                });
+                const totalValido = sim + nao;
+                const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
+                return { ...q, sim, nao, na, pct, totalValido };
+            });
+
+            // Global
+            let totalSimGeral = 0, totalNaoGeral = 0;
+            qStats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
+            const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
+
+            // Por Seção
+            const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
+            const secStats = sections.map(sec => {
+                const qs = qStats.filter(q => q.sec === sec);
+                let sSim = 0, sNao = 0;
+                qs.forEach(q => { sSim += q.sim; sNao += q.nao; });
+                const sPct = (sSim + sNao) > 0 ? Math.round((sSim / (sSim + sNao)) * 100) : 0;
+                return { section: sec, pct: sPct };
+            });
+
+            return { qStats, globalPct, totalSimGeral, totalNaoGeral, secStats };
+        };
+
+        // --- SISTEMA PRINCIPAL ---
         const App = () => {
-            // Estado Global
             const [db, setDb] = useState(() => {
                 const saved = localStorage.getItem('csae_haco_db');
                 return saved ? JSON.parse(saved) : { internados: {}, records: [] };
             });
 
-            // Persistência
             useEffect(() => { localStorage.setItem('csae_haco_db', JSON.stringify(db)); }, [db]);
 
-            // Navegação
-            const [view, setView] = useState('DASHBOARD');
+            const [view, setView] = useState('DASHBOARD'); 
+            // Views: DASHBOARD, PERIODO, AVALIACAO, COMPILADO_PERIODO, COMPILADO_ANUAL
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
 
-            // --- FUNÇÕES DE GESTÃO ---
+            // --- AÇÕES DE BANCO DE DADOS ---
             const savePatientsCount = (periodId, sector, count) => {
                 setDb(prev => ({
-                    ...prev,
-                    internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: parseInt(count) || 0 } }
+                    ...prev, internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: parseInt(count) || 0 } }
                 }));
             };
 
@@ -132,27 +188,23 @@
                 }
             };
 
-            // Backup & Restore
+            // Backup
             const exportData = () => {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-                const dlAnchorElem = document.createElement('a');
-                dlAnchorElem.setAttribute("href", dataStr);
-                dlAnchorElem.setAttribute("download", `CSAE_HACO_Backup_${new Date().toISOString().split('T')[0]}.json`);
-                dlAnchorElem.click();
+                const a = document.createElement('a');
+                a.href = dataStr; a.download = `CSAE_HACO_DB_${new Date().toISOString().split('T')[0]}.json`; a.click();
             };
 
-            const importData = (event) => {
-                const file = event.target.files[0];
+            const importData = (e) => {
+                const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
+                    reader.onload = (ev) => {
                         try {
-                            const imported = JSON.parse(e.target.result);
-                            if(imported.internados && imported.records) {
-                                setDb(imported);
-                                alert("Banco de dados restaurado com sucesso!");
-                            } else alert("Arquivo inválido.");
-                        } catch (error) { alert("Erro ao ler arquivo."); }
+                            const imported = JSON.parse(ev.target.result);
+                            if(imported.internados && imported.records) { setDb(imported); alert("Dados restaurados!"); }
+                            else alert("Arquivo inválido.");
+                        } catch (err) { alert("Erro ao ler arquivo."); }
                     };
                     reader.readAsText(file);
                 }
@@ -161,43 +213,47 @@
             // --- TELAS ---
 
             const renderDashboard = () => {
-                let totalSim = 0, totalNao = 0;
-                db.records.forEach(r => { Object.values(r.answers).forEach(ans => { if (ans === 'SIM') totalSim++; if (ans === 'NÃO') totalNao++; }); });
-                const compliance = (totalSim + totalNao) > 0 ? Math.round((totalSim / (totalSim + totalNao)) * 100) : 0;
+                const { globalPct, totalNaoGeral } = calculateStats(db.records);
 
                 return (
-                    <div className="space-y-10 animate-fade">
+                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
                         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-800 pb-8">
                             <div>
                                 <h1 className="text-3xl font-black uppercase italic tracking-tighter">Gestão de Auditoria SAE</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Hospital de Aeronáutica de Canoas</p>
+                                <div className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div> Hospital de Aeronáutica de Canoas
+                                </div>
                             </div>
-                            <div className="flex gap-4">
-                                <button onClick={exportData} className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase"><Icons.Download/> Backup</button>
-                                <label className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase cursor-pointer">
-                                    <Icons.Upload/> Importar
+                            <div className="flex flex-wrap gap-4">
+                                <button onClick={() => setView('COMPILADO_ANUAL')} className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-blue-900/20 transition-all"><Icon.Chart/> Relatório Anual (Gráficos)</button>
+                                <button onClick={exportData} className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase transition-all"><Icon.Download/> Backup</button>
+                                <label className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase transition-all cursor-pointer">
+                                    <Icon.Upload/> Importar
                                     <input type="file" accept=".json" onChange={importData} className="hidden" />
                                 </label>
                             </div>
                         </header>
 
+                        {/* Visão Geral (Kpis) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
+                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl relative overflow-hidden">
+                                <div className="absolute -right-4 -bottom-4 opacity-5"><Icon.Check /></div>
                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Conformidade Anual</div>
-                                <div className="text-5xl font-black text-blue-500">{compliance}%</div>
+                                <div className="text-5xl font-black text-blue-500">{globalPct}%</div>
                             </div>
                             <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Prontuários Auditados</div>
                                 <div className="text-5xl font-black text-white">{db.records.length}</div>
                             </div>
                             <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Total Não Conformidades</div>
-                                <div className="text-5xl font-black text-red-500">{totalNao}</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Total de Falhas Corrigir</div>
+                                <div className="text-5xl font-black text-red-500">{totalNaoGeral}</div>
                             </div>
                         </div>
 
+                        {/* Ciclos de Auditoria */}
                         <div className="space-y-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Períodos de Auditoria</h2>
+                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Ciclos de Auditoria (Períodos)</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {PERIODOS.map(p => {
                                     const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
@@ -206,7 +262,11 @@
                                     const feitosUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
 
                                     return (
-                                        <button key={p.id} onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 hover:border-blue-600 transition-all text-left flex justify-between items-center group shadow-lg">
+                                        <button 
+                                            key={p.id} 
+                                            onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }}
+                                            className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 hover:border-blue-600 transition-all text-left flex justify-between items-center group shadow-lg"
+                                        >
                                             <div>
                                                 <div className="text-xl font-black text-white">{p.label}</div>
                                                 <div className="flex gap-4 mt-3">
@@ -214,7 +274,9 @@
                                                     <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${feitosUTI >= metaUTI && metaUTI > 0 ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-400'}`}>UTI: {feitosUTI}/{metaUTI}</span>
                                                 </div>
                                             </div>
-                                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg></div>
+                                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg>
+                                            </div>
                                         </button>
                                     )
                                 })}
@@ -235,21 +297,21 @@
                 const recsUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI');
 
                 return (
-                    <div className="space-y-10 animate-fade">
+                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
                         <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl"><Icons.Back /></button>
+                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
                             <div>
                                 <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">{p.label}</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Painel de Amostragem</p>
+                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Painel de Amostragem do Período</p>
                             </div>
                         </header>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-blue-600 pl-3">Meta UPI (40%)</h3>
+                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-blue-600 pl-3">Meta UPI (Mín 40%)</h3>
                                 <div className="flex items-center justify-between gap-6">
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total de Internações</label>
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total de Internações (Mês)</label>
                                         <input type="number" className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-black text-white focus:border-blue-500 outline-none" value={internadosUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} placeholder="0" />
                                     </div>
                                     <div className="text-center bg-slate-950 p-6 rounded-2xl border border-slate-800 min-w-[120px]">
@@ -257,14 +319,14 @@
                                         <div className="text-3xl font-black text-blue-500">{recsUPI.length} / {metaUPI}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => createNewRecord(p.id, 'UPI')} className="w-full py-5 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">+ Iniciar Auditoria UPI</button>
+                                <button onClick={() => createNewRecord(p.id, 'UPI')} className="w-full py-5 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20">+ Iniciar Auditoria UPI</button>
                             </div>
 
                             <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-red-600 pl-3">Meta UTI (40%)</h3>
+                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-red-600 pl-3">Meta UTI (Mín 40%)</h3>
                                 <div className="flex items-center justify-between gap-6">
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total de Internações</label>
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total de Internações (Mês)</label>
                                         <input type="number" className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-black text-white focus:border-red-500 outline-none" value={internadosUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} placeholder="0" />
                                     </div>
                                     <div className="text-center bg-slate-950 p-6 rounded-2xl border border-slate-800 min-w-[120px]">
@@ -272,15 +334,18 @@
                                         <div className="text-3xl font-black text-red-500">{recsUTI.length} / {metaUTI}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => createNewRecord(p.id, 'UTI')} className="w-full py-5 bg-red-600 hover:bg-red-500 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">+ Iniciar Auditoria UTI</button>
+                                <button onClick={() => createNewRecord(p.id, 'UTI')} className="w-full py-5 bg-red-600 hover:bg-red-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-900/20">+ Iniciar Auditoria UTI</button>
                             </div>
                         </div>
 
                         <div className="space-y-6">
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                 <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Prontuários Avaliados</h2>
-                                <button onClick={() => setView('COMPILADO')} className="px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">Ver Compilado <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg></button>
+                                <button onClick={() => setView('COMPILADO_PERIODO')} className="px-6 py-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg">
+                                    <Icon.Chart /> Ver Compilado e Gráficos do Período
+                                </button>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {db.records.filter(r => r.periodId === p.id).map(r => {
                                     const progress = Math.round((Object.keys(r.answers).length / 32) * 100);
@@ -288,7 +353,7 @@
                                         <div key={r.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4">
                                             <div className="flex justify-between items-start">
                                                 <div className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${r.sector==='UPI' ? 'bg-blue-600/20 text-blue-500' : 'bg-red-600/20 text-red-500'}`}>{r.sector}</div>
-                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-600 hover:text-red-500"><Icons.Trash /></button>
+                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-600 hover:text-red-500 transition-colors"><Icon.Trash /></button>
                                             </div>
                                             <div>
                                                 <div className="text-xl font-black">{r.prontuario || 'Sem Número'}</div>
@@ -297,7 +362,7 @@
                                             <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
                                                 <div className={`h-full ${progress === 100 ? 'bg-green-500' : 'bg-amber-500'}`} style={{width: `${progress}%`}}></div>
                                             </div>
-                                            <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest mt-2">Continuar Avaliação</button>
+                                            <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors mt-2">Continuar Avaliação</button>
                                         </div>
                                     )
                                 })}
@@ -314,20 +379,11 @@
                 const progress = Math.round((Object.keys(rec.answers).length / 32) * 100);
                 const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
 
-                const generateReport = () => {
-                    const naoAnswers = PERGUNTAS_AUDITORIA.filter(q => rec.answers[q.id] === 'NÃO');
-                    let report = `*RELATÓRIO DE AUDITORIA SAE - HACO*\nSetor: ${rec.sector} | Prontuário: ${rec.prontuario || 'Não iden.'}\nAuditor: ${rec.auditor}\n-----------------------------------\n*NÃO CONFORMIDADES:*\n\n`;
-                    if (naoAnswers.length === 0) report += "Nenhuma não conformidade encontrada. Padrão Ouro.";
-                    else naoAnswers.forEach(q => { report += `[${q.sec}] - ${q.text}\n`; });
-                    navigator.clipboard.writeText(report);
-                    alert("Relatório de Não Conformidades copiado!");
-                };
-
                 return (
-                    <div className="space-y-10 animate-fade">
+                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
                         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-slate-800 pb-8 sticky top-0 bg-[#0f172a] z-10 pt-4">
                             <div className="flex items-center gap-6">
-                                <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl"><Icons.Back /></button>
+                                <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
                                 <div>
                                     <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Avaliação de Prontuário</h1>
                                     <div className="flex items-center gap-3 mt-2">
@@ -336,25 +392,22 @@
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={generateReport} className="px-6 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 flex items-center gap-2">
-                                <Icons.ClipboardCheck /> Copiar Relatório
-                            </button>
                         </header>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Nº Prontuário</label>
-                                <input className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
+                                <input className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
                             </div>
                             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Auditor Responsável</label>
-                                <select className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
+                                <select className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
                                     {AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}
                                 </select>
                             </div>
                             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Data da Auditoria</label>
-                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
+                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
                             </div>
                         </div>
 
@@ -369,12 +422,12 @@
                                                 <div key={q.id} className="bg-slate-900 p-6 lg:p-8 rounded-[2rem] border border-slate-800 flex flex-col lg:flex-row justify-between lg:items-center gap-6 hover:border-slate-600 transition-colors">
                                                     <div className="flex gap-6 items-start">
                                                         <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center font-black text-slate-500 shrink-0 border border-slate-800">{q.id}</div>
-                                                        <p className="text-sm md:text-base font-semibold text-slate-200 mt-1.5">{q.text}</p>
+                                                        <p className="text-sm md:text-base font-semibold text-slate-200 leading-relaxed mt-1">{q.text}</p>
                                                     </div>
                                                     <div className="flex gap-3 bg-slate-950 p-2 rounded-2xl border border-slate-800 shrink-0">
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'SIM' ? 'bg-green-600 text-white' : 'text-slate-500'}`}><Icons.Check/> SIM</button>
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NÃO')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NÃO' ? 'bg-red-600 text-white' : 'text-slate-500'}`}><Icons.X/> NÃO</button>
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NA')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NA' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}><Icons.Minus/> N/A</button>
+                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'SIM' ? 'bg-green-600 text-white shadow-lg shadow-green-900/40' : 'text-slate-500 hover:text-green-500'}`}><Icon.Check/> SIM</button>
+                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NÃO')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NÃO' ? 'bg-red-600 text-white shadow-lg shadow-red-900/40' : 'text-slate-500 hover:text-red-500'}`}><Icon.X/> NÃO</button>
+                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NA')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NA' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}><Icon.Minus/> N/A</button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -387,89 +440,229 @@
                 );
             };
 
-            const renderCompilado = () => {
+            const renderCompiladoPeriodo = () => {
                 const p = PERIODOS.find(x => x.id === selectedPeriod);
                 const recs = db.records.filter(r => r.periodId === p.id);
-                
-                const stats = PERGUNTAS_AUDITORIA.map(q => {
-                    let sim = 0, nao = 0, na = 0;
-                    recs.forEach(r => {
-                        const a = r.answers[q.id];
-                        if(a === 'SIM') sim++; else if(a === 'NÃO') nao++; else if(a === 'NA') na++;
-                    });
-                    const pct = (sim + nao) > 0 ? ((sim / (sim + nao)) * 100).toFixed(0) : 0;
-                    return { ...q, sim, nao, na, pct };
-                });
+                const { qStats, globalPct, totalNaoGeral, secStats } = calculateStats(recs);
 
-                let totalSimGeral = 0, totalNaoGeral = 0;
-                stats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
-                const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
+                // Config dos Gráficos
+                const doughnutData = {
+                    labels: ['Conforme', 'Não Conforme'],
+                    datasets: [{
+                        data: [globalPct, 100 - globalPct],
+                        backgroundColor: ['#3b82f6', '#1e293b'],
+                        borderWidth: 0,
+                        cutout: '80%'
+                    }]
+                };
+
+                const barData = {
+                    labels: secStats.map(s => s.section),
+                    datasets: [{
+                        label: 'Conformidade (%)',
+                        data: secStats.map(s => s.pct),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8,
+                    }]
+                };
+
+                const barOptions = {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false } }
+                };
 
                 return (
-                    <div className="space-y-10 animate-fade">
+                    <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
                         <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl"><Icons.Back /></button>
+                            <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
                             <div>
                                 <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Compilado do Período</h1>
                                 <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">{p.label}</p>
                             </div>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-gradient-to-br from-blue-900 to-slate-900 p-8 rounded-[2.5rem] border border-blue-800 shadow-2xl flex flex-col justify-center">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-2">Conformidade Global</div>
-                                <div className="text-6xl font-black text-white">{globalPct}%</div>
-                            </div>
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 grid grid-cols-2 gap-6">
-                                <div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Prontuários Lidos</div>
-                                    <div className="text-4xl font-black text-white">{recs.length}</div>
+                        {/* GRÁFICOS DO PERÍODO */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-col items-center justify-center relative">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 w-full text-center">Conformidade Global</div>
+                                <div className="w-48 h-48 relative">
+                                    <ChartComponent type="doughnut" data={doughnutData} options={{cutout: '80%', plugins:{legend:{display:false}}}} height="100%" />
+                                    <div className="absolute inset-0 flex items-center justify-center flex-col mt-2">
+                                        <span className="text-4xl font-black text-white">{globalPct}%</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Total Falhas (NÃO)</div>
-                                    <div className="text-4xl font-black text-red-500">{totalNaoGeral}</div>
+                            </div>
+                            
+                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl lg:col-span-2 flex flex-col">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Desempenho por Etapa (SAE)</div>
+                                <div className="flex-1 min-h-[200px]">
+                                    <ChartComponent type="bar" data={barData} options={barOptions} height="100%" />
                                 </div>
                             </div>
                         </div>
 
+                        {/* TABELA DE DADOS BRUTOS */}
                         <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                        <th className="p-6 border-b border-slate-800">ID</th>
-                                        <th className="p-6 border-b border-slate-800">Item Avaliado</th>
-                                        <th className="p-6 border-b border-slate-800 text-center text-green-500">SIM</th>
-                                        <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
-                                        <th className="p-6 border-b border-slate-800 text-center">N/A</th>
-                                        <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {stats.map(s => (
-                                        <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                            <td className="p-6 text-sm font-black text-slate-500">{s.id}</td>
-                                            <td className="p-6 text-sm font-semibold text-slate-200">{s.text}</td>
-                                            <td className="p-6 text-center text-sm font-black text-green-500">{s.sim}</td>
-                                            <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
-                                            <td className="p-6 text-center text-sm font-black text-slate-500">{s.na}</td>
-                                            <td className="p-6 text-right">
-                                                <span className={`px-4 py-2 rounded-xl text-xs font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>{s.pct}%</span>
-                                            </td>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-[800px]">
+                                    <thead>
+                                        <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            <th className="p-6 border-b border-slate-800">ID</th>
+                                            <th className="p-6 border-b border-slate-800">Critério Avaliado (Res 736/24)</th>
+                                            <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
+                                            <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
+                                            <th className="p-6 border-b border-slate-800 text-center">N/A</th>
+                                            <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {qStats.map(s => (
+                                            <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
+                                                <td className="p-6 text-sm font-black text-slate-500">{s.id}</td>
+                                                <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
+                                                <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
+                                                <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
+                                                <td className="p-6 text-center text-sm font-black text-slate-500">{s.na}</td>
+                                                <td className="p-6 text-right">
+                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
+                                                        {s.pct}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderCompiladoAnual = () => {
+                const { qStats, globalPct, totalNaoGeral, secStats } = calculateStats(db.records);
+
+                // Dados para o Gráfico de Linha (Tendência dos Períodos)
+                const trendLabels = PERIODOS.map(p => p.short);
+                const trendData = PERIODOS.map(p => {
+                    const recs = db.records.filter(r => r.periodId === p.id);
+                    if(recs.length === 0) return 0;
+                    const stats = calculateStats(recs);
+                    return stats.globalPct;
+                });
+
+                const lineData = {
+                    labels: trendLabels,
+                    datasets: [{
+                        label: 'Conformidade Geral (%)',
+                        data: trendData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#0f172a',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                };
+
+                const lineOptions = {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false } }
+                };
+
+                const barData = {
+                    labels: secStats.map(s => s.section),
+                    datasets: [{
+                        label: 'Conformidade Anual (%)',
+                        data: secStats.map(s => s.pct),
+                        backgroundColor: '#10b981',
+                        borderRadius: 8,
+                    }]
+                };
+
+                return (
+                    <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
+                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
+                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
+                            <div>
+                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Relatório Anual Consolidado</h1>
+                                <p className="text-green-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Visão Estratégica CSAE</p>
+                            </div>
+                        </header>
+
+                        {/* GRÁFICO DE TENDÊNCIA E KPIs GERAIS */}
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-col justify-center">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Conformidade Anual</div>
+                                <div className="text-6xl font-black text-green-500">{globalPct}%</div>
+                                <div className="mt-6 space-y-2 border-t border-slate-800 pt-6">
+                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Prontuários Lidos</span><span className="text-white">{db.records.length}</span></div>
+                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Falhas Encontradas</span><span className="text-red-500">{totalNaoGeral}</span></div>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl lg:col-span-3 flex flex-col">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Tendência de Qualidade (Evolução Mensal)</div>
+                                <div className="flex-1 min-h-[250px]">
+                                    <ChartComponent type="line" data={lineData} options={lineOptions} height="100%" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* GRÁFICO DE BARRAS (SEÇÕES ANUAIS) */}
+                        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Desempenho Anual por Etapa do Processo de Enfermagem</div>
+                            <div className="min-h-[250px]">
+                                <ChartComponent type="bar" data={barData} options={{...lineOptions, plugins: { legend: { display: false }}}} height="250px" />
+                            </div>
+                        </div>
+
+                        {/* TABELA DE DADOS BRUTOS ANUAIS */}
+                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-[800px]">
+                                    <thead>
+                                        <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            <th className="p-6 border-b border-slate-800">ID</th>
+                                            <th className="p-6 border-b border-slate-800">Critério (Acumulado Anual)</th>
+                                            <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
+                                            <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
+                                            <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {qStats.map(s => (
+                                            <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
+                                                <td className="p-6 text-sm font-black text-slate-500">{s.id}</td>
+                                                <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
+                                                <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
+                                                <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
+                                                <td className="p-6 text-right">
+                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
+                                                        {s.pct}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 );
             };
 
             return (
-                <div className="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
+                <div className="min-h-screen">
                     {view === 'DASHBOARD' && renderDashboard()}
                     {view === 'PERIODO' && renderPeriodo()}
                     {view === 'AVALIACAO' && renderAvaliacao()}
-                    {view === 'COMPILADO' && renderCompilado()}
+                    {view === 'COMPILADO_PERIODO' && renderCompiladoPeriodo()}
+                    {view === 'COMPILADO_ANUAL' && renderCompiladoAnual()}
                 </div>
             );
         };
