@@ -1,37 +1,63 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSAE HACO - Analytics Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CSAE HACO - Sistema de Gestão de Auditoria</title>
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para Gráficos -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .animate-fade { animation: fadeIn 0.4s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        :root {
+            --bg-dark: #0f172a; /* Slate 900 */
+            --bg-panel: #1e293b; /* Slate 800 */
+            --border-color: #334155; /* Slate 700 */
+            --accent: #2563eb; /* Blue 600 */
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-dark); 
+            color: #f8fafc; 
+            margin: 0; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Scrollbars customizadas para aspecto profissional */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Animações suaves */
+        .animate-fade { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilização para impressão/pdf se necessário futuramente */
+        @media print {
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
-<body>
+<body class="overflow-hidden">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- CONFIGURAÇÃO GLOBAL DOS GRÁFICOS ---
+        // --- CONFIGURAÇÃO GLOBAL DO CHART.JS ---
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = 'Inter';
 
-        // --- DADOS ESTRUTURAIS ---
+        // --- DADOS DO SISTEMA ---
         const AVALIADORES = [
             "Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", 
             "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"
@@ -45,6 +71,9 @@
             { id: '2026-12', label: '15/12/2026 a 14/01/2027', short: 'Dez/Jan' }
         ];
 
+        const SETORES = ['UPI', 'UTI', 'UCC', 'UPA', 'SAD', 'CAIS'];
+
+        // (Dados de Auditoria, Escalas e NANDA mantidos literais conforme V23 para rigor clínico)
         const PERGUNTAS_AUDITORIA = [
             { id: 1, sec: "Histórico", text: "Possui Histórico de Enfermagem na admissão hospitalar?" },
             { id: 2, sec: "Histórico", text: "Possui identificação completa do paciente?" },
@@ -68,52 +97,101 @@
             { id: 20, sec: "Implementação", text: "A Prescrição encontra-se devidamente carimbada e assinada?" },
             { id: 21, sec: "Implementação", text: "Possui Prescrições na SAE Perioperatória?" },
             { id: 22, sec: "Implementação", text: "O formulário da SAE Perioperatória encontra-se devidamente carimbado e assinado?" },
-            { id: 23, sec: "Avaliação/Anotações", text: "Os resultados avaliados são compatíveis com a Prescrição de Enfermagem?" },
-            { id: 24, sec: "Avaliação/Anotações", text: "Possui Evolução de Enfermagem diária?" },
-            { id: 25, sec: "Avaliação/Anotações", text: "As Evoluções apresentam a avaliação do estado geral do paciente?" },
-            { id: 26, sec: "Avaliação/Anotações", text: "Em caso de transferência, há Evolução do setor de origem e de destino?" },
-            { id: 27, sec: "Avaliação/Anotações", text: "Em caso de óbito, há evolução de enfermagem relativa ao ocorrido?" },
-            { id: 28, sec: "Avaliação/Anotações", text: "A Evolução de Enfermagem encontra-se devidamente carimbada e assinada?" },
-            { id: 29, sec: "Avaliação/Anotações", text: "São registradas anotações de Enfermagem?" },
-            { id: 30, sec: "Avaliação/Anotações", text: "As Anotações de Enfermagem encontram-se devidamente carimbadas e assinadas?" },
-            { id: 31, sec: "Avaliação/Anotações", text: "São registradas anotações no formulário da SRPA?" },
-            { id: 32, sec: "Avaliação/Anotações", text: "As Anotações da SRPA encontram-se devidamente carimbadas e assinadas?" }
+            { id: 23, sec: "Avaliação", text: "Os resultados avaliados são compatíveis com a Prescrição de Enfermagem?" },
+            { id: 24, sec: "Avaliação", text: "Possui Evolução de Enfermagem diária?" },
+            { id: 25, sec: "Avaliação", text: "As Evoluções apresentam a avaliação do estado geral do paciente?" },
+            { id: 26, sec: "Avaliação", text: "Em caso de transferência, há Evolução do setor de origem e de destino?" },
+            { id: 27, sec: "Avaliação", text: "Em caso de óbito, há evolução de enfermagem relativa ao ocorrido?" },
+            { id: 28, sec: "Avaliação", text: "A Evolução de Enfermagem encontra-se devidamente carimbada e assinada?" },
+            { id: 29, sec: "Avaliação", text: "São registradas anotações de Enfermagem?" },
+            { id: 30, sec: "Avaliação", text: "As Anotações de Enfermagem encontram-se devidamente carimbadas e assinadas?" },
+            { id: 31, sec: "Avaliação", text: "São registradas anotações no formulário da SRPA?" },
+            { id: 32, sec: "Avaliação", text: "As Anotações da SRPA encontram-se devidamente carimbadas e assinadas?" }
         ];
 
-        // --- COMPONENTES UI & ÍCONES ---
+        const nandaIntegral = [
+            { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento de saúde propenso a risco", "Síndrome do idoso frágil"] },
+            { d: 2, name: "Nutrição", diagnoses: ["Deglutição prejudicada", "Nutrição desequilibrada", "Volume de líquidos deficiente", "Excesso de volume de líquidos", "Risco de glicemia instável", "Risco de desequilíbrio eletrolítico"] },
+            { d: 3, name: "Eliminação e Troca", diagnoses: ["Eliminação urinária prejudicada", "Retenção urinária", "Incontinência urinária", "Constipação", "Diarreia", "Incontinência fecal", "Troca de gases prejudicada", "Motilidade gastrintestinal disfuncional"] },
+            { d: 4, name: "Atividade/Repouso", diagnoses: ["Distúrbio no padrão do sono", "Privação de sono", "Mobilidade física prejudicada", "Mobilidade no leito prejudicada", "Débito cardíaco diminuído", "Padrão respiratório ineficaz", "Perfusão tissular periférica ineficaz", "Ventilação espontânea prejudicada", "Intolerância à atividade", "Fadiga", "Déficit no autocuidado"] },
+            { d: 5, name: "Percepção/Cognição", diagnoses: ["Confusão aguda", "Confusão crônica", "Memória prejudicada", "Comunicação verbal prejudicada", "Conhecimento deficiente", "Orientação prejudicada"] },
+            { d: 6, name: "Autopercepção", diagnoses: ["Desesperança", "Autoestima baixa", "Distúrbio na imagem corporal", "Identidade pessoal perturbada"] },
+            { d: 7, name: "Papéis e Relações", diagnoses: ["Processos familiares disfuncionais", "Tensão do papel de cuidador", "Interação social prejudicada", "Desempenho de papel ineficaz"] },
+            { d: 8, name: "Sexualidade", diagnoses: ["Padrão de sexualidade ineficaz", "Disfunção sexual", "Processo de maternidade ineficaz"] },
+            { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto", "Enfrentamento ineficaz", "Negação ineficaz"] },
+            { d: 10, name: "Princípios de Vida", diagnoses: ["Sofrimento espiritual", "Conflito de decisões", "Não adesão"] },
+            { d: 11, name: "Segurança/Proteção", diagnoses: ["Risco de infecção", "Integridade da pele prejudicada", "Integridade tissular prejudicada", "Risco de lesão por pressão", "Risco de queda", "Risco de aspiração", "Risco de sangramento", "Risco de choque", "Termorregulação ineficaz", "Hipertermia", "Hipotermia"] },
+            { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Conforto prejudicado", "Nausea", "Isolamento social"] },
+            { d: 13, name: "Cresc./Desenvolvimento", diagnoses: ["Atraso no desenvolvimento", "Risco de crescimento desproporcional"] }
+        ];
+
+        const bradenFull = {
+            p: ["1. Totalmente limitado", "2. Muito limitado", "3. Levemente limitado", "4. Nenhuma limitação"],
+            u: ["1. Constantemente úmida", "2. Muito úmida", "3. Ocasionalmente úmida", "4. Raramente úmida"],
+            a: ["1. Acamado", "2. Em cadeira", "3. Deambula ocasionalmente", "4. Deambula frequentemente"],
+            m: ["1. Totalmente imóvel", "2. Muito limitada", "3. Levemente limitada", "4. Sem limitações"],
+            n: ["1. Muito pobre", "2. Provavelmente inadequada", "3. Adequada", "4. Excelente"],
+            f: ["1. Problema", "2. Problema potencial", "3. Nenhum problema aparente"]
+        };
+
+        const fugulinFull = {
+            em: ["Lúcido/Orientado (1)", "Desorientado (2)", "Confuso/Agitado (3)", "Comatoso (4)"],
+            ox: ["Ar ambiente (1)", "O2 Intermitente (2)", "O2 Contínuo (3)", "Ventilação mecânica (4)"],
+            sv: ["Rotina (1)", "Intervalo 4/4h (2)", "Intervalo 2/2h (3)", "Monitorização < 1h (4)"],
+            mo: ["Ativo (1)", "Limitação/Paresia (2)", "Grande limitação/Paraplegia (3)", "Tetraplegia/Imóvel (4)"],
+            lo: ["Deambula (1)", "Cadeira (2)", "Restrito ao leito (3)", "Completamente acamado (4)"],
+            al: ["Independente pela boca (1)", "Auxílio/SNE/GTT (2)", "Totalmente Dependente (3)", "NPT (4)"],
+            cc: ["Independente (1)", "Auxílio chuveiro (2)", "Higiene no leito (3)", "Higiene complexa (4)"],
+            el: ["Independente (1)", "Auxílio (2)", "Incontinência/SVD (3)", "Diálise/Complexa (4)"],
+            te: ["Oral (1)", "EV < 24h (2)", "EV 24h (3)", "Vasoativos (4)"]
+        };
+
+        const morseFull = {
+            h: ["Não (0)", "Sim (25)"],
+            d: ["Não (0)", "Sim (15)"],
+            a: ["Nenhum / Acamado / Cadeira (0)", "Muletas / Andador (15)", "Móveis / Apoio fixo (30)"],
+            t: ["Não (0)", "Sim (20)"],
+            m: ["Normal / Imóvel (0)", "Fraca (10)", "Comprometida (20)"],
+            e: ["Orientado (0)", "Esquece limitações (15)"]
+        };
+
+        // --- ÍCONES ---
         const Icon = {
-            Back: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+            Back: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
             Check: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
             X: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
             Minus: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Download: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-            Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+            Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            Upload: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
             Chart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-            ClipboardCheck: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 11 16 15 12"/></svg>
+            Menu: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+            FilePlus: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
+            ActivityDoc: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12.5 13 11 16 9 11 7.5 13 6 13"/></svg>,
+            FileMinus: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
+            Dashboard: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+            Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            Calculator: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
+            Copy: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+            Shield: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+            Syringe: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>,
+            Terminal: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         };
 
-        // --- COMPONENTE DE GRÁFICO (Wrapper Chart.js) ---
+        // --- COMPONENTE CHART.JS ---
         const ChartComponent = ({ type, data, options, height = "250px" }) => {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
-
             useEffect(() => {
-                if (chartInstance.current) {
-                    chartInstance.current.destroy();
-                }
+                if (chartInstance.current) chartInstance.current.destroy();
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, { type, data, options });
-
-                return () => {
-                    if (chartInstance.current) chartInstance.current.destroy();
-                };
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
             }, [data, options, type]);
-
             return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
         };
 
-        // --- MOTOR ANALÍTICO ---
+        // --- LÓGICA ESTATÍSTICA ---
         const calculateStats = (recordsToAnalyze) => {
             const qStats = PERGUNTAS_AUDITORIA.map(q => {
                 let sim = 0, nao = 0, na = 0;
@@ -123,14 +201,13 @@
                 });
                 const totalValido = sim + nao;
                 const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
-                const pctFalta = totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0; // Cálculo de "Porcentagem de Faltas"
+                const pctFalta = totalValido > 0 ? Math.round((nao / totalValido) * 100) : 0; 
                 return { ...q, sim, nao, na, pct, pctFalta, totalValido };
             });
 
             let totalSimGeral = 0, totalNaoGeral = 0;
             qStats.forEach(s => { totalSimGeral += s.sim; totalNaoGeral += s.nao; });
             const globalPct = (totalSimGeral + totalNaoGeral) > 0 ? Math.round((totalSimGeral / (totalSimGeral + totalNaoGeral)) * 100) : 0;
-
             const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
             
             return { qStats, globalPct, totalSimGeral, totalNaoGeral, sections };
@@ -139,21 +216,43 @@
         // --- SISTEMA PRINCIPAL ---
         const App = () => {
             const [db, setDb] = useState(() => {
-                const saved = localStorage.getItem('csae_haco_db');
+                const saved = localStorage.getItem('csae_haco_v24');
                 return saved ? JSON.parse(saved) : { internados: {}, records: [] };
             });
 
-            useEffect(() => { localStorage.setItem('csae_haco_db', JSON.stringify(db)); }, [db]);
+            useEffect(() => { localStorage.setItem('csae_haco_v24', JSON.stringify(db)); }, [db]);
 
+            // Navegação e Layout
             const [view, setView] = useState('DASHBOARD'); 
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
+            const [activeFormTab, setActiveFormTab] = useState('EVOLUCAO'); // ADMISSAO, EVOLUCAO, ALTA
+            const [activeFormSection, setActiveFormSection] = useState('S'); // S, O, I, C
+            
+            // Formulário Corrente (para a view AVALIACAO -> Criação da Evolução)
+            const [formState, setFormState] = useState({
+                adm: { procedencia: '', acompanhante: '', queixa: '', hpp: '', alergias: '', medicamentos: '' },
+                subjetivo: '',
+                sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
+                exame: {}, vasculares: [], viasAereas: [], eliminações: [], diagnosticos: [],
+                interpretacao: '', condutas: [], obs: '',
+                escalas: {
+                    braden: { p: 4, u: 4, a: 4, m: 4, n: 4, f: 3 },
+                    morse: { h: 0, d: 0, a: 0, t: 0, m: 0, e: 0 },
+                    glasgow: { o: 4, v: 5, m: 6, p: 0 },
+                    fugulin: { em: 1, ox: 1, sv: 1, mo: 1, lo: 1, al: 1, cc: 1, el: 1, te: 1 }
+                },
+                alta: { motivo: '', condicao: '', transporte: '', orientacoes: '' }
+            });
 
-            // --- AÇÕES DE BANCO DE DADOS ---
+            const [searchTerm, setSearchTerm] = useState('');
+            const [openScale, setOpenScale] = useState(null);
+            const [copySuccess, setCopySuccess] = useState(false);
+            const [showMobileTerminal, setShowMobileTerminal] = useState(false); // Toggle terminal on mobile
+
+            // --- AÇÕES DO BANCO DE DADOS ---
             const savePatientsCount = (periodId, sector, count) => {
-                setDb(prev => ({
-                    ...prev, internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: parseInt(count) || 0 } }
-                }));
+                setDb(prev => ({ ...prev, internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: parseInt(count) || 0 } } }));
             };
 
             const createNewRecord = (periodId, sector) => {
@@ -174,7 +273,7 @@
             };
 
             const deleteRecord = (recordId) => {
-                if(window.confirm("Deseja excluir esta avaliação?")) {
+                if(window.confirm("Confirmar exclusão desta auditoria?")) {
                     setDb(prev => ({ ...prev, records: prev.records.filter(r => r.id !== recordId) }));
                 }
             };
@@ -182,7 +281,7 @@
             const exportData = () => {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
                 const a = document.createElement('a');
-                a.href = dataStr; a.download = `CSAE_HACO_DB_${new Date().toISOString().split('T')[0]}.json`; a.click();
+                a.href = dataStr; a.download = `Backup_CSAE_HACO_${new Date().toISOString().split('T')[0]}.json`; a.click();
             };
 
             const importData = (e) => {
@@ -192,118 +291,117 @@
                     reader.onload = (ev) => {
                         try {
                             const imported = JSON.parse(ev.target.result);
-                            if(imported.internados && imported.records) { setDb(imported); alert("Dados restaurados!"); }
+                            if(imported.internados && imported.records) { setDb(imported); alert("Dados restaurados com sucesso!"); }
                             else alert("Arquivo inválido.");
-                        } catch (err) { alert("Erro ao ler arquivo."); }
+                        } catch (err) { alert("Erro ao ler o arquivo."); }
                     };
                     reader.readAsText(file);
                 }
             };
 
-            // --- COMPONENTES DE GRÁFICOS ESPECÍFICOS (Baseados no PDF) ---
+            // --- LÓGICA DE EVOLUÇÃO CLÍNICA ---
+            const bradenCalc = useMemo(() => {
+                const b = formState.escalas.braden; const total = b.p + b.u + b.a + b.m + b.n + b.f;
+                return { total, r: total >= 19 ? "Sem Risco" : total >= 15 ? "Baixo" : total >= 13 ? "Moderado" : total >= 10 ? "Alto" : "Muito Elevado" };
+            }, [formState.escalas.braden]);
 
-            const renderAmostragemChart = (internados, avaliados, title) => {
-                const data = {
-                    labels: [`Internados`, `Avaliados`],
-                    datasets: [{
-                        data: [internados || 0, avaliados || 0],
-                        backgroundColor: ['#3b82f6', '#ef4444'], // Azul (Internados) e Vermelho (Avaliados)
-                        borderRadius: 4
-                    }]
-                };
-                const options = {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { precision: 0 } }, x: { grid: { display: false } } }
-                };
-                return (
-                    <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{title}</div>
-                        <div className="flex-1 min-h-[250px]">
-                            <ChartComponent type="bar" data={data} options={options} height="100%" />
-                        </div>
-                    </div>
-                );
+            const morseCalc = useMemo(() => {
+                const m = formState.escalas.morse; const total = m.h + m.d + m.a + m.t + m.m + m.e;
+                return { total, r: total >= 45 ? "Elevado" : total >= 25 ? "Moderado" : "Baixo" };
+            }, [formState.escalas.morse]);
+
+            const fugulinCalc = useMemo(() => {
+                const total = Object.values(formState.escalas.fugulin).reduce((a, b) => a + b, 0);
+                return { total, d: total > 31 ? "Intensivos" : total > 26 ? "Semi-Int." : total > 20 ? "Alta Dep." : total > 14 ? "Intermed." : "Mínimos" };
+            }, [formState.escalas.fugulin]);
+
+            const glasgowCalc = useMemo(() => {
+                const g = formState.escalas.glasgow; return (g.o + g.v + g.m) - g.p;
+            }, [formState.escalas.glasgow]);
+
+            const generateEvolucaoText = () => {
+                const rec = db.records.find(x => x.id === selectedRecord);
+                const currentSector = rec ? rec.sector : 'Setor Não Definido';
+                const { sv, subjetivo, exame, vasculares, viasAereas, eliminações, diagnosticos, interpretacao, condutas, obs } = formState;
+
+                if (activeFormTab === 'ADMISSAO') {
+                    return `ADMISSÃO DE ENFERMAGEM - HACO\nSETOR: ${currentSector}\n----------------------------------\n` +
+                           `[HISTÓRICO]\n- Procedência: ${formState.adm.procedencia || '--'}\n- Acompanhante: ${formState.adm.acompanhante || 'Não'}\n- Queixa: ${formState.adm.queixa || '--'}\n- HPP: ${formState.adm.hpp || '--'}\n- Alergias: ${formState.adm.alergias || 'Nega'}\n- Sinais Vitais Entrada: PA ${sv.pa} | FC ${sv.fc} | Sat ${sv.spo2}%\n----------------------------------\n[Resolução 736/2024 - CSAE-HACO]`;
+                }
+
+                if (activeFormTab === 'ALTA') {
+                    return `ALTA DE ENFERMAGEM - HACO\nSETOR: ${currentSector}\n----------------------------------\n` +
+                           `- Motivo da Saída: ${formState.alta.motivo || '--'}\n- Condição Clínica: ${formState.alta.condicao || '--'}\n- Transporte: ${formState.alta.transporte || '--'}\n- Orientações: ${formState.alta.orientacoes || '--'}\n----------------------------------\nPaciente orientado quanto a alta hospitalar.`;
+                }
+
+                let text = `S: ${subjetivo || 'Estável, sem queixas intercorrentes.'}\n\n`;
+                text += `O: [SINAIS VITAIS]\n- PA: ${sv.pa || '--'} | FC: ${sv.fc || '--'} | FR: ${sv.fr || '--'}\n- T: ${sv.temp || '--'} | Sat: ${sv.spo2 || '--'}% | EVA: ${sv.eva || '--'}\n\n`;
+                text += `[ESCALAS TÉCNICAS]\n- Glasgow-P: ${glasgowCalc}/15\n- Braden: ${bradenCalc.total} (${bradenCalc.r})\n- Morse: ${morseCalc.total} (${morseCalc.r})\n- Fugulin: ${fugulinCalc.total} (${fugulinCalc.d})\n\n`;
+                
+                text += `[EXAME FÍSICO POR SISTEMAS]\n`;
+                Object.entries(exame).forEach(([cat, vals]) => { if(vals.length > 0) text += `- ${cat}: ${vals.join(', ')}\n`; });
+
+                if (vasculares.length > 0 || viasAereas.length > 0 || eliminações.length > 0) {
+                    text += `\n[INVASIVOS E DISPOSITIVOS]\n`;
+                    vasculares.forEach(v => text += `- ${v.tipo}: em ${v.sitio} | Obs: ${v.obs}\n`);
+                    viasAereas.forEach(va => text += `- ${va.tipo}: Fix ${va.fixacao}cm | Cuff ${va.cuff}mmHg | Sec: ${va.secrecao}\n`);
+                    eliminações.forEach(e => text += `- ${e.tipo}: Débito ${e.debito}ml | Asp: ${e.aspecto}\n`);
+                }
+
+                text += `\nI: [DIAGNÓSTICOS NANDA-I]\n`;
+                if(diagnosticos.length > 0) diagnosticos.forEach(d => text += `- ${d}\n`); else text += `- Evolução clínica favorável; necessidades básicas atendidas.\n`;
+                text += `- Raciocínio Clínico: ${interpretacao || 'Manutenção do quadro.'}\n\n`;
+                
+                text += `C: [PLANO DE CUIDADOS E CONDUTAS]\n`;
+                if(condutas.length > 0) condutas.forEach(c => text += `- ${c}\n`); else text += `- Manter cuidados de rotina.\n`;
+                text += `- Notas: ${obs || 'Sem observações adicionais.'}\n\n`;
+                return text + `[Resolução COFEN 736/2024 - CSAE-HACO]`;
             };
 
-            const renderFaltasChart = (qStats, section) => {
-                const qs = qStats.filter(q => q.sec === section);
-                const data = {
-                    labels: qs.map(q => `Q${q.id}`),
-                    datasets: [{
-                        label: 'Porcentagem de Faltas (%)',
-                        data: qs.map(q => q.pctFalta),
-                        backgroundColor: '#3b82f6', // Barras azuis conforme o PDF
-                        borderRadius: 4
-                    }]
-                };
-                const options = {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: (ctx) => {
-                                    const index = ctx[0].dataIndex;
-                                    return `Q${qs[index].id}: ${qs[index].text}`; // Tooltip inteligente com a pergunta inteira
-                                }
-                            }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } }
-                };
-                return (
-                    <div key={section} className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{section} - Porcentagem de Faltas</div>
-                        <div className="flex-1 min-h-[200px]">
-                            <ChartComponent type="bar" data={data} options={options} height="100%" />
-                        </div>
-                    </div>
-                );
+            const copyAghuse = () => {
+                navigator.clipboard.writeText(generateEvolucaoText());
+                setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000);
             };
 
-            // --- TELAS PRINCIPAIS ---
+            // --- RENDERIZADORES DE TELAS ---
 
             const renderDashboard = () => {
                 const { globalPct, totalNaoGeral } = calculateStats(db.records);
-
                 return (
-                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
-                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-800 pb-8">
+                    <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8">
+                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
                             <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter">Gestão de Auditoria SAE</h1>
-                                <div className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div> Hospital de Aeronáutica de Canoas
-                                </div>
+                                <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">Painel de Controle SAE</h1>
+                                <p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">Gestão de Auditoria - HACO</p>
                             </div>
-                            <div className="flex flex-wrap gap-4">
-                                <button onClick={() => setView('COMPILADO_ANUAL')} className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-blue-900/20 transition-all"><Icon.Chart/> Relatório Anual (Gráficos)</button>
-                                <button onClick={exportData} className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase transition-all"><Icon.Download/> Backup</button>
-                                <label className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase transition-all cursor-pointer">
+                            <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                                <button onClick={() => setView('COMPILADO_ANUAL')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-bold uppercase transition-all shadow-lg"><Icon.Chart/> Análise Anual</button>
+                                <button onClick={exportData} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all"><Icon.Download/> Backup</button>
+                                <label className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all cursor-pointer">
                                     <Icon.Upload/> Importar
                                     <input type="file" accept=".json" onChange={importData} className="hidden" />
                                 </label>
                             </div>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl relative overflow-hidden">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Conformidade Anual</div>
-                                <div className="text-5xl font-black text-blue-500">{globalPct}%</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Conformidade Global</div>
+                                <div className="text-4xl md:text-5xl font-black text-blue-500">{globalPct}%</div>
                             </div>
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Prontuários Auditados</div>
-                                <div className="text-5xl font-black text-white">{db.records.length}</div>
+                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Prontuários Auditados</div>
+                                <div className="text-4xl md:text-5xl font-black text-white">{db.records.length}</div>
                             </div>
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Total de Falhas Corrigir</div>
-                                <div className="text-5xl font-black text-red-500">{totalNaoGeral}</div>
+                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-md">
+                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Falhas Identificadas</div>
+                                <div className="text-4xl md:text-5xl font-black text-red-500">{totalNaoGeral}</div>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Ciclos de Auditoria (Períodos)</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-1">Ciclos de Auditoria</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {PERIODOS.map(p => {
                                     const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
                                     const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
@@ -311,17 +409,15 @@
                                     const feitosUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
 
                                     return (
-                                        <button key={p.id} onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 hover:border-blue-600 transition-all text-left flex justify-between items-center group shadow-lg">
+                                        <button key={p.id} onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all text-left flex justify-between items-center group">
                                             <div>
-                                                <div className="text-xl font-black text-white">{p.label}</div>
-                                                <div className="flex gap-4 mt-3">
-                                                    <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${feitosUPI >= metaUPI && metaUPI > 0 ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-400'}`}>UPI: {feitosUPI}/{metaUPI}</span>
-                                                    <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${feitosUTI >= metaUTI && metaUTI > 0 ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-400'}`}>UTI: {feitosUTI}/{metaUTI}</span>
+                                                <div className="text-lg font-black text-white">{p.label}</div>
+                                                <div className="flex gap-3 mt-2">
+                                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md ${feitosUPI >= metaUPI && metaUPI > 0 ? 'bg-green-500/20 text-green-400' : 'bg-slate-900 text-slate-400'}`}>UPI: {feitosUPI}/{metaUPI}</span>
+                                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md ${feitosUTI >= metaUTI && metaUTI > 0 ? 'bg-green-500/20 text-green-400' : 'bg-slate-900 text-slate-400'}`}>UTI: {feitosUTI}/{metaUTI}</span>
                                                 </div>
                                             </div>
-                                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 transition-colors">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg>
-                                            </div>
+                                            <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center group-hover:bg-blue-600 transition-colors text-white"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
                                         </button>
                                     )
                                 })}
@@ -337,77 +433,74 @@
                 const internadosUTI = db.internados[p.id]?.UTI || '';
                 const metaUPI = Math.ceil((parseInt(internadosUPI) || 0) * 0.4);
                 const metaUTI = Math.ceil((parseInt(internadosUTI) || 0) * 0.4);
-                
                 const recsUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI');
                 const recsUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI');
 
                 return (
-                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
-                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
+                    <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8">
+                        <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
+                            <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icon.Back /></button>
                             <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">{p.label}</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Painel de Amostragem do Período</p>
+                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">{p.label}</h1>
+                                <p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">Amostragem do Período</p>
                             </div>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-blue-600 pl-3">Meta UPI (Mín 40%)</h3>
-                                <div className="flex items-center justify-between gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Card UPI */}
+                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-5">
+                                <div className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-blue-500 pl-3">Meta UPI (Mín 40%)</div>
+                                <div className="flex items-center gap-4">
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total de Internações (Mês)</label>
-                                        <input type="number" className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-black text-white focus:border-blue-500 outline-none" value={internadosUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} placeholder="0" />
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Total Internações Mês</label>
+                                        <input type="number" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-lg font-black text-white focus:border-blue-500 outline-none" value={internadosUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} placeholder="0" />
                                     </div>
-                                    <div className="text-center bg-slate-950 p-6 rounded-2xl border border-slate-800 min-w-[120px]">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prontuários</div>
-                                        <div className="text-3xl font-black text-blue-500">{recsUPI.length} / {metaUPI}</div>
+                                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center min-w-[100px]">
+                                        <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Avaliados</div>
+                                        <div className="text-2xl font-black text-blue-500">{recsUPI.length}/{metaUPI}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => createNewRecord(p.id, 'UPI')} className="w-full py-5 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20">+ Iniciar Auditoria UPI</button>
+                                <button onClick={() => createNewRecord(p.id, 'UPI')} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all text-white">+ Nova Auditoria UPI</button>
                             </div>
-
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-red-600 pl-3">Meta UTI (Mín 40%)</h3>
-                                <div className="flex items-center justify-between gap-6">
+                            {/* Card UTI */}
+                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-5">
+                                <div className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-red-500 pl-3">Meta UTI (Mín 40%)</div>
+                                <div className="flex items-center gap-4">
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total de Internações (Mês)</label>
-                                        <input type="number" className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-black text-white focus:border-red-500 outline-none" value={internadosUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} placeholder="0" />
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Total Internações Mês</label>
+                                        <input type="number" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-lg font-black text-white focus:border-red-500 outline-none" value={internadosUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} placeholder="0" />
                                     </div>
-                                    <div className="text-center bg-slate-950 p-6 rounded-2xl border border-slate-800 min-w-[120px]">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prontuários</div>
-                                        <div className="text-3xl font-black text-red-500">{recsUTI.length} / {metaUTI}</div>
+                                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center min-w-[100px]">
+                                        <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Avaliados</div>
+                                        <div className="text-2xl font-black text-red-500">{recsUTI.length}/{metaUTI}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => createNewRecord(p.id, 'UTI')} className="w-full py-5 bg-red-600 hover:bg-red-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-900/20">+ Iniciar Auditoria UTI</button>
+                                <button onClick={() => createNewRecord(p.id, 'UTI')} className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all text-white">+ Nova Auditoria UTI</button>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Prontuários Avaliados</h2>
-                                <button onClick={() => setView('COMPILADO_PERIODO')} className="px-6 py-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg">
-                                    <Icon.Chart /> Painel Analytics do Período
-                                </button>
+                                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-1">Prontuários Avaliados</h2>
+                                <button onClick={() => setView('COMPILADO_PERIODO')} className="px-5 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2"><Icon.Chart /> Estatísticas do Período</button>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {db.records.filter(r => r.periodId === p.id).map(r => {
                                     const progress = Math.round((Object.keys(r.answers).length / 32) * 100);
                                     return (
-                                        <div key={r.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4">
+                                        <div key={r.id} className="bg-slate-800 p-5 rounded-2xl border border-slate-700 flex flex-col gap-3 relative overflow-hidden">
                                             <div className="flex justify-between items-start">
-                                                <div className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${r.sector==='UPI' ? 'bg-blue-600/20 text-blue-500' : 'bg-red-600/20 text-red-500'}`}>{r.sector}</div>
-                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-600 hover:text-red-500 transition-colors"><Icon.Trash /></button>
+                                                <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${r.sector==='UPI' ? 'bg-blue-600/20 text-blue-400' : 'bg-red-600/20 text-red-400'}`}>{r.sector}</div>
+                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-500 hover:text-red-500"><Icon.Trash /></button>
                                             </div>
                                             <div>
-                                                <div className="text-xl font-black">{r.prontuario || 'Sem Número'}</div>
-                                                <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">Auditor: {r.auditor}</div>
+                                                <div className="text-lg font-black text-white">{r.prontuario || 'Sem Prontuário'}</div>
+                                                <div className="text-[10px] text-slate-400 uppercase mt-0.5">{r.auditor}</div>
                                             </div>
-                                            <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                                                <div className={`h-full ${progress === 100 ? 'bg-green-500' : 'bg-amber-500'}`} style={{width: `${progress}%`}}></div>
+                                            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mt-2">
+                                                <div className={`h-full ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{width: `${progress}%`}}></div>
                                             </div>
-                                            <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors mt-2">Continuar Avaliação</button>
+                                            <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="w-full py-2.5 bg-slate-900 hover:bg-slate-700 rounded-lg text-[10px] font-bold uppercase transition-colors text-slate-300 mt-1">Continuar Edição</button>
                                         </div>
                                     )
                                 })}
@@ -424,74 +517,177 @@
                 const progress = Math.round((Object.keys(rec.answers).length / 32) * 100);
                 const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
 
-                const generateReport = () => {
+                const copyAuditReport = () => {
                     const naoAnswers = PERGUNTAS_AUDITORIA.filter(q => rec.answers[q.id] === 'NÃO');
-                    let report = `*RELATÓRIO DE AUDITORIA SAE - HACO*\nSetor: ${rec.sector} | Prontuário: ${rec.prontuario || 'Não iden.'}\nAuditor: ${rec.auditor}\n-----------------------------------\n*NÃO CONFORMIDADES:*\n\n`;
-                    if (naoAnswers.length === 0) report += "Nenhuma não conformidade encontrada. Padrão Ouro.";
+                    let report = `*AUDITORIA SAE - HACO*\nSetor: ${rec.sector} | Prontuário: ${rec.prontuario || 'N/I'}\nAuditor: ${rec.auditor}\nData: ${rec.date}\n-----------------------\n*FALHAS IDENTIFICADAS:*\n\n`;
+                    if (naoAnswers.length === 0) report += "Padrão Ouro. Nenhuma falha.";
                     else naoAnswers.forEach(q => { report += `[${q.sec}] - ${q.text}\n`; });
                     navigator.clipboard.writeText(report);
-                    alert("Relatório de Não Conformidades copiado!");
+                    alert("Relatório de Falhas copiado!");
                 };
 
                 return (
-                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
-                        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-slate-800 pb-8 sticky top-0 bg-[#0f172a] z-10 pt-4">
-                            <div className="flex items-center gap-6">
-                                <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
-                                <div>
-                                    <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Avaliação de Prontuário</h1>
-                                    <div className="flex items-center gap-3 mt-2">
-                                        <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${rec.sector==='UPI' ? 'bg-blue-600/20 text-blue-500' : 'bg-red-600/20 text-red-500'}`}>{rec.sector}</span>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{progress}% Concluído</span>
+                    <div className="flex flex-col lg:flex-row h-screen animate-fade bg-slate-900">
+                        {/* FORMULÁRIO ESQUERDA */}
+                        <div className="flex-1 flex flex-col overflow-hidden relative">
+                            {/* Toolbar Mobile/Desktop Formulário */}
+                            <header className="flex-none bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center z-10 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => setView('PERIODO')} className="p-2 bg-slate-800 rounded-lg"><Icon.Back /></button>
+                                    <div>
+                                        <div className="text-sm font-black text-white leading-tight">Auditoria: {rec.sector}</div>
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase">{progress}% Concluído</div>
                                     </div>
                                 </div>
-                            </div>
-                            <button onClick={generateReport} className="px-6 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 flex items-center gap-2">
-                                <Icon.ClipboardCheck /> Copiar Relatório
-                            </button>
-                        </header>
+                                <div className="flex gap-2">
+                                    <button onClick={copyAuditReport} className="hidden md:flex px-4 py-2 bg-slate-800 text-slate-200 rounded-lg text-[10px] font-bold uppercase items-center gap-2"><Icon.ClipboardCheck /> Relatório</button>
+                                    <button onClick={() => setShowMobileTerminal(!showMobileTerminal)} className="lg:hidden p-2 bg-blue-600 text-white rounded-lg"><Icon.Terminal /></button>
+                                </div>
+                            </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Nº Prontuário</label>
-                                <input className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
-                            </div>
-                            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Auditor Responsável</label>
-                                <select className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
-                                    {AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                            </div>
-                            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Data da Auditoria</label>
-                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
+                            {/* Conteúdo Rolável (Auditoria ou Evolução) */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24 lg:pb-6">
+                                {/* Navegação Interna: Tabs */}
+                                <div className="flex gap-2 mb-6 bg-slate-800 p-1 rounded-xl overflow-x-auto no-scrollbar">
+                                    <button onClick={() => setActiveFormTab('ADMISSAO')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeFormTab === 'ADMISSAO' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}>Admissão</button>
+                                    <button onClick={() => setActiveFormTab('EVOLUCAO')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeFormTab === 'EVOLUCAO' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Evolução (SOIC)</button>
+                                    <button onClick={() => setActiveFormTab('ALTA')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeFormTab === 'ALTA' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}>Alta</button>
+                                    <button onClick={() => setActiveFormTab('AUDIT')} className={`px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center gap-1 ${activeFormTab === 'AUDIT' ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}><Icon.Check/> Check-list</button>
+                                </div>
+
+                                {activeFormTab === 'AUDIT' && (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Prontuário</label>
+                                                <input className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
+                                            </div>
+                                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Auditor</label>
+                                                <select className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold outline-none" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
+                                                    {AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Data</label>
+                                                <input type="date" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold outline-none" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        
+                                        {sections.map(sec => {
+                                            const qs = PERGUNTAS_AUDITORIA.filter(q => q.sec === sec);
+                                            return (
+                                                <div key={sec} className="space-y-3">
+                                                    <h3 className="text-[10px] font-black uppercase text-blue-500 tracking-widest pl-2">{sec}</h3>
+                                                    <div className="space-y-2">
+                                                        {qs.map(q => (
+                                                            <div key={q.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                                                                <p className="text-xs font-medium text-slate-200 leading-snug">{q.id}. {q.text}</p>
+                                                                <div className="flex gap-2 shrink-0 bg-slate-900 p-1.5 rounded-lg border border-slate-700 self-start md:self-auto">
+                                                                    <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] font-bold transition-all ${rec.answers[q.id] === 'SIM' ? 'bg-green-600 text-white' : 'text-slate-500'}`}>SIM</button>
+                                                                    <button onClick={() => answerQuestion(rec.id, q.id, 'NÃO')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] font-bold transition-all ${rec.answers[q.id] === 'NÃO' ? 'bg-red-600 text-white' : 'text-slate-500'}`}>NÃO</button>
+                                                                    <button onClick={() => answerQuestion(rec.id, q.id, 'NA')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] font-bold transition-all ${rec.answers[q.id] === 'NA' ? 'bg-slate-600 text-white' : 'text-slate-500'}`}>N/A</button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {activeFormTab === 'EVOLUCAO' && (
+                                    <div className="space-y-6">
+                                        <div className="flex bg-slate-800 p-1.5 rounded-xl border border-slate-700">
+                                            {['S', 'O', 'I', 'C'].map(step => (
+                                                <button key={step} onClick={() => setActiveFormSection(step)} className={`flex-1 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${activeFormSection === step ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>{step}</button>
+                                            ))}
+                                        </div>
+
+                                        {activeFormSection === 'S' && <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700"><div className="text-[10px] font-bold text-slate-500 uppercase mb-2">Relato Subjetivo</div><textarea className="w-full h-40 bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500" value={formState.subjetivo} onChange={e => setFormState({...formState, subjetivo: e.target.value})} placeholder="Relatos e queixas..." /></div>}
+                                        
+                                        {activeFormSection === 'O' && (
+                                            <div className="space-y-6">
+                                                {/* SV */}
+                                                <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+                                                    {['pa','fc','fr','temp','spo2','hgt','eva'].map(v => (
+                                                        <div key={v} className="bg-slate-800 p-3 rounded-xl border border-slate-700"><div className="text-[9px] font-bold uppercase text-slate-500 mb-1">{v}</div><input className="w-full bg-transparent text-sm font-bold text-white outline-none" value={formState.sv[v]} onChange={e => setFormState({...formState, sv: {...formState.sv, [v]: e.target.value}})} placeholder="-" /></div>
+                                                    ))}
+                                                </div>
+                                                {/* Escalas Rápidas */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                        <div className="flex justify-between items-center mb-3"><span className="text-[10px] font-bold uppercase text-blue-400">Braden</span><span className="text-xs font-black text-white">{bradenCalc.total}</span></div>
+                                                        <select className="w-full bg-slate-900 p-2 rounded text-[10px] text-white outline-none mb-2" onChange={e => setFormState({...formState, escalas: {...formState.escalas, braden: {...formState.escalas.braden, m: parseInt(e.target.value)}}})}><option value="4">Mobilidade Sem Limitação</option><option value="1">Totalmente Imóvel</option></select>
+                                                        <select className="w-full bg-slate-900 p-2 rounded text-[10px] text-white outline-none" onChange={e => setFormState({...formState, escalas: {...formState.escalas, braden: {...formState.escalas.braden, u: parseInt(e.target.value)}}})}><option value="4">Raramente Úmida</option><option value="1">Constantemente Úmida</option></select>
+                                                    </div>
+                                                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                        <div className="flex justify-between items-center mb-3"><span className="text-[10px] font-bold uppercase text-blue-400">Fugulin</span><span className="text-xs font-black text-white">{fugulinCalc.total}</span></div>
+                                                        <select className="w-full bg-slate-900 p-2 rounded text-[10px] text-white outline-none mb-2" onChange={e => setFormState({...formState, escalas: {...formState.escalas, fugulin: {...formState.escalas.fugulin, em: parseInt(e.target.value)}}})}><option value="1">Lúcido</option><option value="4">Comatoso</option></select>
+                                                        <select className="w-full bg-slate-900 p-2 rounded text-[10px] text-white outline-none" onChange={e => setFormState({...formState, escalas: {...formState.escalas, fugulin: {...formState.escalas.fugulin, ox: parseInt(e.target.value)}}})}><option value="1">Ar Ambiente</option><option value="4">Vent. Mecânica</option></select>
+                                                    </div>
+                                                </div>
+                                                {/* Exame Físico Básico */}
+                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                    <div className="text-[10px] font-bold uppercase text-blue-400 mb-3">Exame Físico Rápido</div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {["Eupnéico", "LOTE", "MV+ sem RA", "BRNF", "Pele Íntegra", "Edema", "Curativo Limpo"].map(o => (
+                                                            <button key={o} onClick={() => {
+                                                                const c = formState.exame['Geral'] || [];
+                                                                setFormState({...formState, exame: {...formState.exame, 'Geral': c.includes(o) ? c.filter(x=>x!==o) : [...c, o]}});
+                                                            }} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${formState.exame['Geral']?.includes(o) ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>{o}</button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {activeFormSection === 'I' && (
+                                            <div className="space-y-4">
+                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                    <div className="text-[10px] font-bold uppercase text-slate-500 mb-3">Diagnósticos NANDA-I</div>
+                                                    <div className="flex flex-wrap gap-2 mb-4">
+                                                        {["Risco de Infecção", "Risco de Queda", "Troca de gases prejudicada", "Dor aguda"].map(d => (
+                                                            <button key={d} onClick={() => setFormState(p => ({...p, diagnosticos: p.diagnosticos.includes(d) ? p.diagnosticos.filter(x=>x!==d) : [...p.diagnosticos, d]}))} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${formState.diagnosticos.includes(d) ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400'}`}>{d}</button>
+                                                        ))}
+                                                    </div>
+                                                    <textarea className="w-full h-24 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none" value={formState.interpretacao} onChange={e => setFormState({...formState, interpretacao: e.target.value})} placeholder="Raciocínio Clínico..." />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {activeFormSection === 'C' && (
+                                            <div className="space-y-4">
+                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                    <div className="flex flex-wrap gap-2 mb-4">
+                                                        {["Monitorar SSVV", "Decúbito 2/2h", "Controle Glicêmico", "Grades Elevadas"].map(c => (
+                                                            <button key={c} onClick={() => setFormState(p => ({...p, condutas: p.condutas.includes(c) ? p.condutas.filter(x=>x!==c) : [...p.condutas, c]}))} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${formState.condutas.includes(c) ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400'}`}>{c}</button>
+                                                        ))}
+                                                    </div>
+                                                    <textarea className="w-full h-24 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none" value={formState.obs} onChange={e => setFormState({...formState, obs: e.target.value})} placeholder="Condutas extras..." />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        <div className="space-y-16">
-                            {sections.map(sec => {
-                                const qs = PERGUNTAS_AUDITORIA.filter(q => q.sec === sec);
-                                return (
-                                    <div key={sec} className="space-y-6">
-                                        <h3 className="text-sm font-black uppercase text-slate-400 tracking-[0.3em] border-l-4 border-blue-600 pl-4">{sec}</h3>
-                                        <div className="grid grid-cols-1 gap-4">
-                                            {qs.map(q => (
-                                                <div key={q.id} className="bg-slate-900 p-6 lg:p-8 rounded-[2rem] border border-slate-800 flex flex-col lg:flex-row justify-between lg:items-center gap-6 hover:border-slate-600 transition-colors">
-                                                    <div className="flex gap-6 items-start">
-                                                        <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center font-black text-slate-500 shrink-0 border border-slate-800">Q{q.id}</div>
-                                                        <p className="text-sm md:text-base font-semibold text-slate-200 mt-1.5">{q.text}</p>
-                                                    </div>
-                                                    <div className="flex gap-3 bg-slate-950 p-2 rounded-2xl border border-slate-800 shrink-0">
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'SIM' ? 'bg-green-600 text-white shadow-lg shadow-green-900/40' : 'text-slate-500 hover:text-green-500'}`}><Icon.Check/> SIM</button>
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NÃO')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NÃO' ? 'bg-red-600 text-white shadow-lg shadow-red-900/40' : 'text-slate-500 hover:text-red-500'}`}><Icon.X/> NÃO</button>
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NA')} className={`flex items-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NA' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}><Icon.Minus/> N/A</button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                        {/* TERMINAL DIREITA (Desktop fixo, Mobile Toggle) */}
+                        <div className={`fixed inset-y-0 right-0 w-full md:w-[400px] lg:w-[450px] bg-slate-950 border-l border-slate-800 shadow-2xl z-40 transform transition-transform duration-300 ${showMobileTerminal ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:static lg:block'} flex flex-col`}>
+                            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                                <div className="text-[10px] font-black uppercase text-blue-500 flex items-center gap-2"><Icons.Terminal/> AGHUse Output</div>
+                                <button onClick={() => setShowMobileTerminal(false)} className="lg:hidden p-1 text-slate-400"><Icons.X/></button>
+                            </div>
+                            <div className="flex-1 p-4 overflow-hidden flex flex-col">
+                                <pre className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 text-[10px] md:text-[11px] font-mono text-emerald-400 overflow-y-auto custom-scrollbar whitespace-pre-wrap leading-relaxed select-all">
+                                    {generateEvolucaoText()}
+                                </pre>
+                                <button onClick={copyAghuse} className={`w-full py-4 mt-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-colors flex justify-center items-center gap-2 ${copySuccess ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
+                                    {copySuccess ? <Icons.Check/> : <Icons.ClipboardCopy/>} {copySuccess ? "Copiado!" : "Copiar para AGHUse"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
@@ -499,198 +695,110 @@
 
             const renderCompiladoPeriodo = () => {
                 const p = PERIODOS.find(x => x.id === selectedPeriod);
-                const internadosUPI = parseInt(db.internados[p.id]?.UPI) || 0;
-                const internadosUTI = parseInt(db.internados[p.id]?.UTI) || 0;
-                const recsUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI');
-                const recsUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI');
-                const recs = [...recsUPI, ...recsUTI];
-                
-                const { qStats, sections } = calculateStats(recs);
+                const recs = db.records.filter(r => r.periodId === p.id);
+                const { qStats, globalPct, sections } = calculateStats(recs);
+
+                const renderBarChart = (section) => {
+                    const qs = qStats.filter(q => q.sec === section);
+                    const data = { labels: qs.map(q => `Q${q.id}`), datasets: [{ data: qs.map(q => q.pctFalta), backgroundColor: '#3b82f6', borderRadius: 4 }] };
+                    const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: (c) => `Q${qs[c[0].dataIndex].id}: ${qs[c[0].dataIndex].text}` } } }, scales: { y: { max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } } };
+                    return (
+                        <div key={section} className="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm flex flex-col h-64">
+                            <div className="text-[10px] font-black uppercase text-slate-400 mb-3">{section} - Faltas (%)</div>
+                            <div className="flex-1"><ChartComponent type="bar" data={data} options={options} height="100%" /></div>
+                        </div>
+                    );
+                };
 
                 return (
-                    <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
-                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
-                            <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Analytics do Período</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">{p.label}</p>
-                            </div>
+                    <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8 max-w-7xl mx-auto p-4 md:p-8">
+                        <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
+                            <button onClick={() => setView('PERIODO')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icon.Back /></button>
+                            <div><h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Análise do Período</h1><p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">{p.label}</p></div>
                         </header>
-
-                        {/* GRÁFICOS DE AMOSTRAGEM (BASEADOS NO PDF) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {renderAmostragemChart(internadosUPI, recsUPI.length, `Comparativo Internados x Avaliados - UPI`)}
-                            {renderAmostragemChart(internadosUTI, recsUTI.length, `Comparativo Internados x Avaliados - UTI`)}
+                        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center py-10 shadow-lg">
+                            <div className="text-[10px] font-black uppercase text-slate-400 mb-2">Conformidade Geral (Mês)</div>
+                            <div className="text-6xl font-black text-blue-500">{globalPct}%</div>
                         </div>
-
-                        {/* GRÁFICOS DE PORCENTAGEM DE FALTAS (BASEADOS NO PDF) */}
-                        <div className="space-y-6 pt-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Porcentagem de Faltas (Não Conformidades) por Etapa</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {sections.map(sec => renderFaltasChart(qStats, sec))}
-                            </div>
-                        </div>
-
-                        {/* TABELA DE DADOS BRUTOS */}
-                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl mt-10">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[800px]">
-                                    <thead>
-                                        <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <th className="p-6 border-b border-slate-800">ID</th>
-                                            <th className="p-6 border-b border-slate-800">Critério Avaliado</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
-                                            <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {qStats.map(s => (
-                                            <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                                <td className="p-6 text-sm font-black text-slate-500">Q{s.id}</td>
-                                                <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
-                                                <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
-                                                <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
-                                                <td className="p-6 text-right">
-                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
-                                                        {s.pct}%
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{sections.map(sec => renderBarChart(sec))}</div>
                     </div>
                 );
             };
 
             const renderCompiladoAnual = () => {
-                // Cálculo Geral
-                const { qStats, globalPct, totalNaoGeral, sections } = calculateStats(db.records);
-
-                // Cálculo Totais de Amostragem Anual
-                let totalIntUPI = 0, totalIntUTI = 0;
-                let totalAvUPI = 0, totalAvUTI = 0;
-
-                PERIODOS.forEach(p => {
-                    totalIntUPI += parseInt(db.internados[p.id]?.UPI) || 0;
-                    totalIntUTI += parseInt(db.internados[p.id]?.UTI) || 0;
-                    totalAvUPI += db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
-                    totalAvUTI += db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
-                });
-
-                // Dados para o Gráfico de Linha (Tendência)
-                const trendLabels = PERIODOS.map(p => p.short);
-                const trendData = PERIODOS.map(p => {
-                    const recs = db.records.filter(r => r.periodId === p.id);
-                    if(recs.length === 0) return 0;
-                    return calculateStats(recs).globalPct;
-                });
-
-                const lineData = {
-                    labels: trendLabels,
-                    datasets: [{
-                        label: 'Conformidade Geral (%)',
-                        data: trendData,
-                        borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderWidth: 3, tension: 0.4, fill: true,
-                        pointBackgroundColor: '#0f172a', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 6
-                    }]
-                };
-
-                const lineOptions = {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { display: false } }
-                };
+                const { globalPct, totalNaoGeral } = calculateStats(db.records);
+                const trendData = PERIODOS.map(p => calculateStats(db.records.filter(r => r.periodId === p.id)).globalPct);
+                const data = { labels: PERIODOS.map(p => p.short), datasets: [{ label: 'Conformidade', data: trendData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }] };
+                const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } } };
 
                 return (
-                    <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
-                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icon.Back /></button>
-                            <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Relatório Anual Consolidado</h1>
-                                <p className="text-green-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Visão Estratégica CSAE-HACO</p>
-                            </div>
+                    <div className="space-y-6 md:space-y-8 animate-fade pb-20 md:pb-8 max-w-7xl mx-auto p-4 md:p-8">
+                        <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
+                            <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"><Icon.Back /></button>
+                            <div><h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Análise Anual</h1><p className="text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-1">Evolução de Qualidade</p></div>
                         </header>
-
-                        {/* GRÁFICOS DE AMOSTRAGEM ANUAL */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {renderAmostragemChart(totalIntUPI, totalAvUPI, `Acumulado Anual: Internados x Avaliados - UPI`)}
-                            {renderAmostragemChart(totalIntUTI, totalAvUTI, `Acumulado Anual: Internados x Avaliados - UTI`)}
-                        </div>
-
-                        {/* GRÁFICO DE TENDÊNCIA E KPIs GERAIS */}
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 pt-6">
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-col justify-center">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Conformidade Anual</div>
-                                <div className="text-6xl font-black text-green-500">{globalPct}%</div>
-                                <div className="mt-6 space-y-2 border-t border-slate-800 pt-6">
-                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Prontuários Lidos</span><span className="text-white">{db.records.length}</span></div>
-                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Total de Falhas</span><span className="text-red-500">{totalNaoGeral}</span></div>
-                                </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col justify-center">
+                                <div className="text-[10px] font-black uppercase text-slate-400 mb-1">Média Anual</div>
+                                <div className="text-5xl font-black text-blue-500 mb-6">{globalPct}%</div>
+                                <div className="text-sm font-bold text-white flex justify-between border-t border-slate-700 pt-4">Total de Falhas: <span className="text-red-500">{totalNaoGeral}</span></div>
                             </div>
-                            
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl lg:col-span-3 flex flex-col">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Tendência de Qualidade (Evolução Mensal)</div>
-                                <div className="flex-1 min-h-[250px]">
-                                    <ChartComponent type="line" data={lineData} options={lineOptions} height="100%" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* GRÁFICOS DE FALTAS ANUAIS POR ETAPA */}
-                        <div className="space-y-6 pt-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Porcentagem de Faltas (Acumulado Anual)</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {sections.map(sec => renderFaltasChart(qStats, sec))}
-                            </div>
-                        </div>
-
-                        {/* TABELA DE DADOS BRUTOS ANUAIS */}
-                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl mt-10">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[800px]">
-                                    <thead>
-                                        <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <th className="p-6 border-b border-slate-800">ID</th>
-                                            <th className="p-6 border-b border-slate-800">Critério (Acumulado Anual)</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
-                                            <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {qStats.map(s => (
-                                            <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                                <td className="p-6 text-sm font-black text-slate-500">Q{s.id}</td>
-                                                <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
-                                                <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
-                                                <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
-                                                <td className="p-6 text-right">
-                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
-                                                        {s.pct}%
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 lg:col-span-2 flex flex-col h-72">
+                                <div className="text-[10px] font-black uppercase text-slate-400 mb-4">Linha de Tendência Mensal</div>
+                                <div className="flex-1"><ChartComponent type="line" data={data} options={options} height="100%" /></div>
                             </div>
                         </div>
                     </div>
                 );
             };
 
+            // --- NAVEGAÇÃO MOBILE INFERIOR ---
+            const MobileNav = () => (
+                <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe">
+                    <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'DASHBOARD' ? 'text-blue-500' : 'text-slate-500'}`}>
+                        <Icons.Dashboard />
+                        <span className="text-[8px] font-bold mt-1">Painel</span>
+                    </button>
+                    {selectedPeriod && (
+                        <button onClick={() => setView('PERIODO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'PERIODO' ? 'text-blue-500' : 'text-slate-500'}`}>
+                            <Icons.ActivityDoc />
+                            <span className="text-[8px] font-bold mt-1">Amostra</span>
+                        </button>
+                    )}
+                    {selectedRecord && (
+                        <button onClick={() => setView('AVALIACAO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500'}`}>
+                            <Icons.FilePlus />
+                            <span className="text-[8px] font-bold mt-1">Auditoria</span>
+                        </button>
+                    )}
+                </div>
+            );
+
             return (
-                <div className="min-h-screen">
-                    {view === 'DASHBOARD' && renderDashboard()}
-                    {view === 'PERIODO' && renderPeriodo()}
-                    {view === 'AVALIACAO' && renderAvaliacao()}
-                    {view === 'COMPILADO_PERIODO' && renderCompiladoPeriodo()}
-                    {view === 'COMPILADO_ANUAL' && renderCompiladoAnual()}
+                <div className="h-screen w-full flex flex-col md:flex-row bg-slate-950 overflow-hidden">
+                    {/* SIDEBAR DESKTOP */}
+                    <div className="hidden md:flex w-20 lg:w-24 bg-slate-900 border-r border-slate-800 flex-col items-center py-8 z-50 shrink-0">
+                        <div className="p-3 bg-blue-600 rounded-xl shadow-lg mb-8"><Icons.Shield size={24}/></div>
+                        <div className="flex flex-col gap-4 w-full px-4">
+                            <button onClick={() => setView('DASHBOARD')} title="Painel de Controle" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'DASHBOARD' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.Dashboard /></button>
+                            {selectedPeriod && <button onClick={() => setView('PERIODO')} title="Amostragem" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'PERIODO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.ActivityDoc /></button>}
+                            {selectedRecord && <button onClick={() => setView('AVALIACAO')} title="Avaliação" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'AVALIACAO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.FilePlus /></button>}
+                        </div>
+                        <div className="mt-auto opacity-30 text-[8px] font-black uppercase text-center tracking-widest">CSAE<br/>HACO</div>
+                    </div>
+
+                    {/* CONTEÚDO DINÂMICO */}
+                    <div className="flex-1 overflow-y-auto h-full relative custom-scrollbar bg-slate-950">
+                        {view === 'DASHBOARD' && renderDashboard()}
+                        {view === 'PERIODO' && renderPeriodo()}
+                        {view === 'AVALIACAO' && renderAvaliacao()}
+                        {view === 'COMPILADO_PERIODO' && renderCompiladoPeriodo()}
+                        {view === 'COMPILADO_ANUAL' && renderCompiladoAnual()}
+                    </div>
+
+                    {/* NAVEGAÇÃO MOBILE */}
+                    {view !== 'AVALIACAO' && <MobileNav />}
+                    {view === 'AVALIACAO' && !showMobileTerminal && <MobileNav />}
                 </div>
             );
         };
