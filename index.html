@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GT SAE HACO - Sistema Cloud de Auditoria</title>
+    <title>GT SAE HACO - Sistema de Auditoria</title>
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -12,7 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK (Compat Version para HTML único) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <style>
@@ -40,11 +40,10 @@
 
     <script type="text/babel">
         // =====================================================================
-        // PASSO 4: COLE SUAS CHAVES DO FIREBASE AQUI
-        // Substitua os valores abaixo pelas chaves geradas no Console do Firebase
+        // CHAVES DO FIREBASE
         // =====================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyCJJX95TGZD9neKRWuu8HjedZKKRie5Uxw",
+  apiKey: "AIzaSyCJJX95TGZD9neKRWuu8HjedZKKRie5Uxw",
   authDomain: "gtsae-haco.firebaseapp.com",
   projectId: "gtsae-haco",
   storageBucket: "gtsae-haco.firebasestorage.app",
@@ -52,14 +51,13 @@
   appId: "1:177895085134:web:40731911ad0a47bf7edf1f"
         };
 
-        // Inicialização do Firebase (Automática se a chave for alterada)
         let dbFS = null;
         if (firebaseConfig.apiKey !== "COLE_AQUI_SUA_API_KEY") {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             dbFS = firebase.firestore();
         }
 
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
         Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter';
 
         // --- ÍCONES ---
@@ -74,7 +72,8 @@
             Pdf: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
             Trash: ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
             Cloud: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
-            Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
+            ChevronDown: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
         };
 
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
@@ -99,7 +98,6 @@
 
         const AVALIADORES = ["Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"];
         
-        // Períodos com 2026 e 2027 para testar o filtro anual
         const PERIODOS = [
             { id: '2026-08', label: '15/08/2026 a 14/09/2026', short: 'Ago/Set' },
             { id: '2026-09', label: '15/09/2026 a 14/10/2026', short: 'Set/Out' },
@@ -159,10 +157,30 @@
         };
 
         const App = () => {
-            const [db, setDb] = useState({ internados: {}, records: [] });
+            const [db, setDb] = useState(() => {
+                const saved = localStorage.getItem('auditoria_gtsae_haco');
+                return saved ? JSON.parse(saved) : { internados: {}, records: [] };
+            });
             const [isCloud, setIsCloud] = useState(false);
 
-            // SINCRONIZAÇÃO HÍBRIDA (FIREBASE OU LOCALSTORAGE)
+            const anosDisponiveis = [...new Set(PERIODOS.map(p => p.id.split('-')[0]))];
+            const [anoSelecionado, setAnoSelecionado] = useState(anosDisponiveis[0]);
+            
+            // Estado para os Accordions do Dashboard (Drop Downs por ano)
+            const [openYears, setOpenYears] = useState({});
+
+            // Agrupamento de Períodos por Ano
+            const groupedPeriods = useMemo(() => {
+                const groups = {};
+                PERIODOS.forEach(p => {
+                    const year = p.id.split('-')[0];
+                    if (!groups[year]) groups[year] = [];
+                    groups[year].push(p);
+                });
+                return groups;
+            }, []);
+
+            // Lógica de Sincronização (Nuvem / Local)
             useEffect(() => {
                 if (dbFS) {
                     setIsCloud(true);
@@ -186,11 +204,39 @@
                 if (!dbFS) localStorage.setItem('auditoria_gtsae_haco', JSON.stringify(db));
             }, [db]);
 
+            // Lógica: Identifica se o Ano está Completo para definir o Dropdown
+            useEffect(() => {
+                setOpenYears(prev => {
+                    const next = { ...prev };
+                    Object.keys(groupedPeriods).forEach(year => {
+                        // Varre todos os meses daquele ano
+                        const isComplete = groupedPeriods[year].every(p => {
+                            const intUPI = parseInt(db.internados[p.id]?.UPI);
+                            const intUTI = parseInt(db.internados[p.id]?.UTI);
+                            // Se não informou internações, está incompleto
+                            if (isNaN(intUPI) || isNaN(intUTI)) return false; 
+                            
+                            const metaUPI = Math.ceil(intUPI * 0.4);
+                            const metaUTI = Math.ceil(intUTI * 0.4);
+                            const fUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
+                            const fUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
+                            
+                            return fUPI >= metaUPI && fUTI >= metaUTI;
+                        });
+                        
+                        // Se for a primeira vez renderizando esse ano, define o estado inicial
+                        if (next[year] === undefined) {
+                            next[year] = !isComplete; // Abre se estiver incompleto, fecha se estiver completo
+                        }
+                    });
+                    return next;
+                });
+            }, [db.internados, db.records, groupedPeriods]);
+
             const [view, setView] = useState('DASHBOARD'); 
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
 
-            // Ações de Escrita Adaptativas
             const savePatientsCount = (periodId, sector, count) => {
                 const val = parseInt(count) || 0;
                 if (dbFS) dbFS.collection('internados').doc(periodId).set({ [sector]: val }, { merge: true });
@@ -225,7 +271,11 @@
                 }
             };
 
-            // Gráficos
+            // Toggle Manual do Accordion do Ano
+            const toggleYearDropdown = (year) => {
+                setOpenYears(prev => ({ ...prev, [year]: !prev[year] }));
+            };
+
             const renderAmostragemChart = (internados, avaliados, setor, labelPeriodo) => {
                 const data = {
                     labels: [''], 
@@ -253,7 +303,7 @@
             const renderFaltasChart = (qStats, section) => {
                 const qs = qStats.filter(q => q.sec === section);
                 const data = {
-                    labels: qs.map(q => wrapText(q.text, 14)), // Quebra empilhada em 14 caracteres
+                    labels: qs.map(q => wrapText(q.text, 14)), 
                     datasets: [{ label: 'Porcentagem de Faltas', data: qs.map(q => q.pctFalta), backgroundColor: '#4285F4', barPercentage: 0.5 }]
                 };
                 const options = {
@@ -266,7 +316,7 @@
                     },
                     scales: { 
                         y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } }, 
-                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, minRotation: 0, autoSkip: false } } // Rotação ZERO para empilhar
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, minRotation: 0, autoSkip: false } }
                     }
                 };
                 return (
@@ -276,6 +326,9 @@
                 );
             };
 
+            // ==========================================
+            // MODIFICAÇÃO EXCLUSIVA NO DASHBOARD
+            // ==========================================
             const renderDashboard = () => {
                 const { globalPct, totalNaoGeral } = calculateStats(db.records);
                 return (
@@ -310,34 +363,65 @@
                             </div>
                         </div>
 
-                        <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-900 border-b border-slate-700">
-                                    <tr>
-                                        <th className="p-4 font-semibold text-slate-400">Período de Avaliação</th>
-                                        <th className="p-4 font-semibold text-slate-400 text-center">Meta UPI</th>
-                                        <th className="p-4 font-semibold text-slate-400 text-center">Meta UTI</th>
-                                        <th className="p-4 font-semibold text-slate-400 text-right">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-700">
-                                    {PERIODOS.map(p => {
-                                        const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
-                                        const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
-                                        const fUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
-                                        const fUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
+                        <div className="space-y-4 pt-2">
+                            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-4">Ciclos de Auditoria por Exercício</h2>
+                            
+                            {/* RENDERIZA OS ANOS COMO DROPDOWNS (ACCORDIONS) */}
+                            {Object.keys(groupedPeriods).sort((a,b) => b.localeCompare(a)).map(year => {
+                                const isOpen = openYears[year];
+                                const periods = groupedPeriods[year];
+                                
+                                return (
+                                    <div key={year} className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden shadow-sm">
+                                        <button 
+                                            onClick={() => toggleYearDropdown(year)}
+                                            className="w-full flex items-center justify-between p-5 bg-slate-800 hover:bg-slate-700/80 transition-colors focus:outline-none"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Icons.Folder size={22} className="text-blue-500" />
+                                                <span className="font-bold text-white text-lg tracking-wide">Exercício {year}</span>
+                                                {!isOpen && <span className="ml-4 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-900/50 text-emerald-400 border border-emerald-800/50 uppercase tracking-wider">Concluído</span>}
+                                            </div>
+                                            <div className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-slate-400`}>
+                                                <Icons.ChevronDown size={20} />
+                                            </div>
+                                        </button>
+                                        
+                                        {/* TABELA DE PERÍODOS DAQUELE ANO */}
+                                        {isOpen && (
+                                            <div className="border-t border-slate-700 bg-slate-800/50 animate-fade">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead className="bg-slate-900/80 border-b border-slate-700/80">
+                                                        <tr>
+                                                            <th className="p-4 font-semibold text-slate-400">Período de Avaliação</th>
+                                                            <th className="p-4 font-semibold text-slate-400 text-center">Meta UPI</th>
+                                                            <th className="p-4 font-semibold text-slate-400 text-center">Meta UTI</th>
+                                                            <th className="p-4 font-semibold text-slate-400 text-right">Ação</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-700/50">
+                                                        {periods.map(p => {
+                                                            const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
+                                                            const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
+                                                            const fUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
+                                                            const fUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
 
-                                        return (
-                                            <tr key={p.id} className="hover:bg-slate-700/50 transition-colors">
-                                                <td className="p-4 font-medium text-slate-200">{p.label}</td>
-                                                <td className="p-4 text-center"><span className={`px-2.5 py-1 rounded text-xs font-medium ${fUPI >= metaUPI && metaUPI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUPI} / {metaUPI}</span></td>
-                                                <td className="p-4 text-center"><span className={`px-2.5 py-1 rounded text-xs font-medium ${fUTI >= metaUTI && metaUTI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUTI} / {metaUTI}</span></td>
-                                                <td className="p-4 text-right"><button onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Abrir Pasta</button></td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
+                                                            return (
+                                                                <tr key={p.id} className="hover:bg-slate-700/50 transition-colors">
+                                                                    <td className="p-4 font-medium text-slate-200">{p.label}</td>
+                                                                    <td className="p-4 text-center"><span className={`px-2.5 py-1 rounded text-xs font-medium ${fUPI >= metaUPI && metaUPI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUPI} / {metaUPI}</span></td>
+                                                                    <td className="p-4 text-center"><span className={`px-2.5 py-1 rounded text-xs font-medium ${fUTI >= metaUTI && metaUTI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUTI} / {metaUTI}</span></td>
+                                                                    <td className="p-4 text-right"><button onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm transition-colors">Abrir Pasta</button></td>
+                                                                </tr>
+                                                            )
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
                         </div>
                     </div>
                 );
@@ -488,14 +572,10 @@
             };
 
             const renderCompiladoAnual = () => {
-                // LÓGICA DE FILTRO ANUAL
-                const anosDisponiveis = [...new Set(PERIODOS.map(p => p.id.split('-')[0]))];
-                const [anoSelecionado, setAnoSelecionado] = useState(anosDisponiveis[0]);
-
                 const periodosDoAno = PERIODOS.filter(p => p.id.startsWith(anoSelecionado));
                 const recordsDoAno = db.records.filter(r => periodosDoAno.some(p => p.id === r.periodId));
                 
-                const { qStats, sections } = calculateStats(recordsDoAno);
+                const { qStats, globalPct, sections } = calculateStats(recordsDoAno);
 
                 let totalIntUPI = 0, totalIntUTI = 0, totalAvUPI = 0, totalAvUTI = 0;
                 periodosDoAno.forEach(p => {
@@ -523,6 +603,7 @@
                             </div>
                             <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print"><Icons.Pdf size={16}/> Gerar PDF</button>
                         </header>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {renderAmostragemChart(totalIntUPI, totalAvUPI, 'UPI', `(Acumulado ${anoSelecionado})`)}
                             {renderAmostragemChart(totalIntUTI, totalAvUTI, 'UTI', `(Acumulado ${anoSelecionado})`)}
