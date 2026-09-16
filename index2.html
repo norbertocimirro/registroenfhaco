@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSAE HACO - Gestão de Auditoria SAE</title>
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -13,53 +13,76 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #0f172a; 
-            color: #f8fafc; 
+            color: #e2e8f0; 
             margin: 0; 
             -webkit-font-smoothing: antialiased;
         }
+        
+        /* Scrollbars discretas */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .animate-fade { animation: fadeIn 0.3s ease-in-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilos para o Gerador de PDF */
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { 
+                background-color: #ffffff !important; 
+                color: #000000 !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            .no-print { display: none !important; }
+            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .print-bg-white { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #000 !important; }
+            .print-text-dark { color: #0f172a !important; }
+            .print-break-avoid { break-inside: avoid; }
+        }
     </style>
 </head>
-<body class="overflow-x-hidden">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONFIGURAÇÃO GLOBAL DO CHART.JS ---
+        // Configuração do Chart.js
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = 'Inter';
 
-        // --- ÍCONES ---
+        // --- ÍCONES SÓBRIOS ---
         const Icons = {
             Shield: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-            Dashboard: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
-            FileCheck: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 12"/></svg>,
-            Chart: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-            ActivityDoc: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12.5 13 11 16 9 11 7.5 13 6 13"/></svg>,
+            Dashboard: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+            Folder: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
+            FileEdit: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+            Chart: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
             Back: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>,
-            Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
-            X: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-            Minus: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Trash: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-            Download: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-            Upload: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-            ClipboardCheck: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 11 16 15 12"/></svg>,
-            Table: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            Save: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Pdf: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            Trash: ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         };
 
-        // --- DADOS DA PLANILHA (MÉTODOS - PRONTUÁRIO) ---
+        // --- COMPONENTE DE GRÁFICOS ---
+        const ChartComponent = ({ type, data, options, height = "250px" }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+            React.useEffect(() => {
+                if (chartInstance.current) chartInstance.current.destroy();
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, { type, data, options });
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [data, options, type]);
+            return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
+        };
+
+        // --- DADOS DO SISTEMA ---
         const AVALIADORES = [
             "Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", 
             "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"
@@ -108,26 +131,14 @@
             { id: 32, sec: "Avaliação e Anotações", text: "As Anotações da SRPA encontram-se devidamente carimbadas e assinadas?" }
         ];
 
-        // --- COMPONENTE CHART.JS ---
-        const ChartComponent = ({ type, data, options, height = "250px" }) => {
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
-            React.useEffect(() => {
-                if (chartInstance.current) chartInstance.current.destroy();
-                const ctx = chartRef.current.getContext('2d');
-                chartInstance.current = new Chart(ctx, { type, data, options });
-                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
-            }, [data, options, type]);
-            return <div style={{ position: 'relative', height, width: '100%' }}><canvas ref={chartRef}></canvas></div>;
-        };
-
         // --- MOTOR ANALÍTICO ---
-        const calculateStats = (recordsToAnalyze) => {
+        const calculateStats = (records) => {
             const qStats = PERGUNTAS_AUDITORIA.map(q => {
                 let sim = 0, nao = 0, na = 0;
-                recordsToAnalyze.forEach(r => {
-                    const a = r.answers[q.id];
-                    if(a === 'SIM') sim++; else if(a === 'NÃO') nao++; else if(a === 'NA') na++;
+                records.forEach(r => {
+                    if(r.answers[q.id] === 'SIM') sim++; 
+                    else if(r.answers[q.id] === 'NÃO') nao++; 
+                    else if(r.answers[q.id] === 'NA') na++;
                 });
                 const totalValido = sim + nao;
                 const pct = totalValido > 0 ? Math.round((sim / totalValido) * 100) : 0;
@@ -143,20 +154,20 @@
             return { qStats, globalPct, totalSimGeral, totalNaoGeral, sections };
         };
 
-        // --- APLICAÇÃO PRINCIPAL ---
+        // --- SISTEMA PRINCIPAL ---
         const App = () => {
             const [db, setDb] = useState(() => {
-                const saved = localStorage.getItem('auditoria_csae_haco');
+                const saved = localStorage.getItem('auditoria_csae_enterprise');
                 return saved ? JSON.parse(saved) : { internados: {}, records: [] };
             });
 
-            React.useEffect(() => { localStorage.setItem('auditoria_csae_haco', JSON.stringify(db)); }, [db]);
+            React.useEffect(() => { localStorage.setItem('auditoria_csae_enterprise', JSON.stringify(db)); }, [db]);
 
-            const [view, setView] = useState('DASHBOARD'); // DASHBOARD, PERIODO, AVALIACAO, COMPILADO_PERIODO, COMPILADO_ANUAL
+            const [view, setView] = useState('DASHBOARD'); 
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
 
-            // --- AÇÕES DO BANCO DE DADOS ---
+            // Ações
             const savePatientsCount = (periodId, sector, count) => {
                 setDb(prev => ({ ...prev, internados: { ...prev.internados, [periodId]: { ...(prev.internados[periodId] || {UPI:0, UTI:0}), [sector]: parseInt(count) || 0 } } }));
             };
@@ -177,149 +188,136 @@
             };
 
             const deleteRecord = (recordId) => {
-                if(window.confirm("Confirmar exclusão desta auditoria?")) {
+                if(window.confirm("Confirmar exclusão?")) {
                     setDb(prev => ({ ...prev, records: prev.records.filter(r => r.id !== recordId) }));
                 }
             };
 
-            const exportData = () => {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-                const a = document.createElement('a'); a.href = dataStr; a.download = `Auditoria_CSAE_HACO_${new Date().toISOString().split('T')[0]}.json`; a.click();
-            };
-
-            const importData = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        try {
-                            const imported = JSON.parse(ev.target.result);
-                            if(imported.internados && imported.records) { setDb(imported); alert("Dados restaurados com sucesso!"); }
-                            else alert("Arquivo inválido.");
-                        } catch (err) { alert("Erro ao ler o arquivo."); }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-
-            // --- GRÁFICOS REUTILIZÁVEIS ---
-            const renderAmostragemChart = (internados, avaliados, title) => {
+            // Funções de Gráficos Consolidados
+            const renderAmostragemChart = (intUPI, avUPI, intUTI, avUTI) => {
                 const data = {
-                    labels: [`Internados`, `Avaliados`],
+                    labels: ['UPI', 'UTI'],
+                    datasets: [
+                        { label: 'Internados', data: [intUPI || 0, intUTI || 0], backgroundColor: '#3b82f6', borderRadius: 2 },
+                        { label: 'Avaliados (Auditoria)', data: [avUPI || 0, avUTI || 0], backgroundColor: '#ef4444', borderRadius: 2 }
+                    ]
+                };
+                const options = {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter' } } } },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, 
+                        x: { grid: { display: false } } 
+                    }
+                };
+                return (
+                    <div className="bg-slate-800 p-5 rounded-md border border-slate-700 shadow flex flex-col h-72 print-bg-white print-break-avoid">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-4 print-text-dark">Amostragem: Internados vs. Avaliados</div>
+                        <div className="flex-1"><ChartComponent type="bar" data={data} options={options} height="100%" /></div>
+                    </div>
+                );
+            };
+
+            const renderFaltasConsolidadasChart = (qStats, sections) => {
+                // Média de faltas por seção
+                const dataFaltas = sections.map(sec => {
+                    const qs = qStats.filter(q => q.sec === sec);
+                    let sumPct = 0;
+                    qs.forEach(q => sumPct += q.pctFalta);
+                    return qs.length > 0 ? Math.round(sumPct / qs.length) : 0;
+                });
+
+                const data = {
+                    labels: sections,
                     datasets: [{
-                        data: [internados || 0, avaliados || 0],
-                        backgroundColor: ['#3b82f6', '#ef4444'], // Azul (Internados) e Vermelho (Avaliados)
-                        borderRadius: 4
+                        label: 'Taxa Média de Faltas (%)',
+                        data: dataFaltas,
+                        backgroundColor: '#f59e0b', // Amber
+                        borderRadius: 2
                     }]
                 };
                 const options = {
                     responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { precision: 0 } }, x: { grid: { display: false } } }
+                    scales: { 
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } }, 
+                        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } } 
+                    }
                 };
                 return (
-                    <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{title}</div>
-                        <div className="flex-1 min-h-[250px]">
-                            <ChartComponent type="bar" data={data} options={options} height="100%" />
-                        </div>
-                    </div>
-                );
-            };
-
-            const renderFaltasChart = (qStats, section) => {
-                const qs = qStats.filter(q => q.sec === section);
-                const data = {
-                    labels: qs.map(q => `Q${q.id}`),
-                    datasets: [{
-                        label: 'Porcentagem de Faltas (%)',
-                        data: qs.map(q => q.pctFalta),
-                        backgroundColor: '#3b82f6', 
-                        borderRadius: 4
-                    }]
-                };
-                const options = {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: (ctx) => `Q${qs[ctx[0].dataIndex].id}: ${qs[ctx[0].dataIndex].text}`
-                            }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } }
-                };
-                return (
-                    <div key={section} className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{section} - Faltas (%)</div>
-                        <div className="flex-1 min-h-[200px]">
-                            <ChartComponent type="bar" data={data} options={options} height="100%" />
-                        </div>
+                    <div className="bg-slate-800 p-5 rounded-md border border-slate-700 shadow flex flex-col h-72 print-bg-white print-break-avoid">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-4 print-text-dark">Taxa de Faltas (Não Conformidades) por Etapa</div>
+                        <div className="flex-1"><ChartComponent type="bar" data={data} options={options} height="100%" /></div>
                     </div>
                 );
             };
 
             // --- TELAS ---
-
             const renderDashboard = () => {
                 const { globalPct, totalNaoGeral } = calculateStats(db.records);
                 return (
-                    <div className="space-y-6 md:space-y-8 animate-fade max-w-7xl mx-auto p-4 md:p-8">
-                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-800 pb-8">
+                    <div className="max-w-6xl mx-auto space-y-6 animate-fade pb-10">
+                        <header className="flex justify-between items-end border-b border-slate-700 pb-4 mb-6">
                             <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter">Auditoria SAE (Planilha)</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Hospital de Aeronáutica de Canoas</p>
+                                <h1 className="text-2xl font-bold text-white tracking-tight">Painel de Gestão SAE</h1>
+                                <p className="text-sm text-slate-400 mt-1">Hospital de Aeronáutica de Canoas (CSAE)</p>
                             </div>
-                            <div className="flex flex-wrap gap-4 w-full md:w-auto">
-                                <button onClick={() => setView('COMPILADO_ANUAL')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-blue-900/20 transition-all"><Icons.Chart/> Relatório Anual (Gráficos)</button>
-                                <button onClick={exportData} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase transition-all"><Icons.Download/> Backup</button>
-                                <label className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase transition-all cursor-pointer">
-                                    <Icons.Upload/> Importar
-                                    <input type="file" accept=".json" onChange={importData} className="hidden" />
-                                </label>
-                            </div>
+                            <button onClick={() => setView('COMPILADO_ANUAL')} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                                <Icons.Chart size={18}/> Relatório Anual
+                            </button>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Conformidade Anual Global</div>
-                                <div className="text-5xl font-black text-blue-500">{globalPct}%</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Conformidade Global</div>
+                                <div className="text-3xl font-bold text-blue-500">{globalPct}%</div>
                             </div>
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Prontuários Auditados</div>
-                                <div className="text-5xl font-black text-white">{db.records.length}</div>
+                            <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Total Auditado</div>
+                                <div className="text-3xl font-bold text-slate-100">{db.records.length}</div>
                             </div>
-                            <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Não Conformidades (NÃO)</div>
-                                <div className="text-5xl font-black text-red-500">{totalNaoGeral}</div>
+                            <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Não Conformidades</div>
+                                <div className="text-3xl font-bold text-red-500">{totalNaoGeral}</div>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Ciclos de Auditoria</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {PERIODOS.map(p => {
-                                    const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
-                                    const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
-                                    const feitosUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
-                                    const feitosUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
+                        <div>
+                            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-4">Ciclos de Auditoria</h2>
+                            <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-slate-900 border-b border-slate-700">
+                                        <tr>
+                                            <th className="p-4 font-semibold text-slate-400">Período</th>
+                                            <th className="p-4 font-semibold text-slate-400 text-center">Meta UPI</th>
+                                            <th className="p-4 font-semibold text-slate-400 text-center">Meta UTI</th>
+                                            <th className="p-4 font-semibold text-slate-400 text-right">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-700">
+                                        {PERIODOS.map(p => {
+                                            const metaUPI = Math.ceil((db.internados[p.id]?.UPI || 0) * 0.4);
+                                            const metaUTI = Math.ceil((db.internados[p.id]?.UTI || 0) * 0.4);
+                                            const fUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI').length;
+                                            const fUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI').length;
 
-                                    return (
-                                        <button key={p.id} onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 hover:border-blue-600 transition-all text-left flex justify-between items-center group shadow-lg">
-                                            <div>
-                                                <div className="text-xl font-black text-white">{p.label}</div>
-                                                <div className="flex gap-4 mt-3">
-                                                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${feitosUPI >= metaUPI && metaUPI > 0 ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-400'}`}>UPI: {feitosUPI}/{metaUPI}</span>
-                                                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${feitosUTI >= metaUTI && metaUTI > 0 ? 'bg-green-600/20 text-green-500' : 'bg-slate-800 text-slate-400'}`}>UTI: {feitosUTI}/{metaUTI}</span>
-                                                </div>
-                                            </div>
-                                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 transition-colors text-slate-400 group-hover:text-white">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"/></svg>
-                                            </div>
-                                        </button>
-                                    )
-                                })}
+                                            return (
+                                                <tr key={p.id} className="hover:bg-slate-700/50 transition-colors">
+                                                    <td className="p-4 font-medium text-slate-200">{p.label}</td>
+                                                    <td className="p-4 text-center">
+                                                        <span className={`px-2.5 py-1 rounded text-xs font-medium ${fUPI >= metaUPI && metaUPI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUPI} / {metaUPI}</span>
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <span className={`px-2.5 py-1 rounded text-xs font-medium ${fUTI >= metaUTI && metaUTI > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-900 text-slate-400'}`}>{fUTI} / {metaUTI}</span>
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        <button onClick={() => { setSelectedPeriod(p.id); setView('PERIODO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Abrir Pasta</button>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -328,88 +326,93 @@
 
             const renderPeriodo = () => {
                 const p = PERIODOS.find(x => x.id === selectedPeriod);
-                const internadosUPI = db.internados[p.id]?.UPI || '';
-                const internadosUTI = db.internados[p.id]?.UTI || '';
-                const metaUPI = Math.ceil((parseInt(internadosUPI) || 0) * 0.4);
-                const metaUTI = Math.ceil((parseInt(internadosUTI) || 0) * 0.4);
-                
-                const recsUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI');
-                const recsUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI');
+                const intUPI = db.internados[p.id]?.UPI || '';
+                const intUTI = db.internados[p.id]?.UTI || '';
+                const mUPI = Math.ceil((parseInt(intUPI) || 0) * 0.4);
+                const mUTI = Math.ceil((parseInt(intUTI) || 0) * 0.4);
+                const recs = db.records.filter(r => r.periodId === p.id);
 
                 return (
-                    <div className="space-y-8 animate-fade max-w-7xl mx-auto p-4 md:p-8">
-                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icons.Back /></button>
-                            <div>
-                                <h1 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter text-white">{p.label}</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Painel de Amostragem 40%</p>
+                    <div className="max-w-6xl mx-auto space-y-6 animate-fade pb-10">
+                        <header className="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setView('DASHBOARD')} className="text-slate-400 hover:text-white transition-colors"><Icons.Back /></button>
+                                <div>
+                                    <h1 className="text-xl font-bold text-white">Auditoria: {p.label}</h1>
+                                </div>
                             </div>
+                            <button onClick={() => setView('COMPILADO_PERIODO')} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                                <Icons.Chart size={16}/> Relatório do Mês
+                            </button>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-blue-600 pl-3">Amostragem UPI (Mín 40%)</h3>
-                                <div className="flex items-center justify-between gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 border-l-2 border-blue-500 pl-2">Metas UPI</div>
+                                <div className="flex gap-4 items-end">
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total Internações Mês</label>
-                                        <input type="number" className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-black text-white focus:border-blue-500 outline-none" value={internadosUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} placeholder="0" />
+                                        <label className="text-xs text-slate-400 block mb-1">Pacientes Internados</label>
+                                        <input type="number" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500" value={intUPI} onChange={e => savePatientsCount(p.id, 'UPI', e.target.value)} />
                                     </div>
-                                    <div className="text-center bg-slate-950 p-6 rounded-2xl border border-slate-800 min-w-[120px]">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Avaliados</div>
-                                        <div className="text-3xl font-black text-blue-500">{recsUPI.length} / {metaUPI}</div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-slate-400 block mb-1">Amostra Mín (40%)</label>
+                                        <div className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-slate-400 font-medium">{mUPI}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => createNewRecord(p.id, 'UPI')} className="w-full py-5 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg">+ Nova Avaliação UPI</button>
+                                <button onClick={() => createNewRecord(p.id, 'UPI')} className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-medium transition-colors">Nova Auditoria UPI</button>
                             </div>
 
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-l-4 border-red-600 pl-3">Amostragem UTI (Mín 40%)</h3>
-                                <div className="flex items-center justify-between gap-6">
+                            <div className="bg-slate-800 p-5 rounded-md border border-slate-700">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 border-l-2 border-red-500 pl-2">Metas UTI</div>
+                                <div className="flex gap-4 items-end">
                                     <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Total Internações Mês</label>
-                                        <input type="number" className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-black text-white focus:border-red-500 outline-none" value={internadosUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} placeholder="0" />
+                                        <label className="text-xs text-slate-400 block mb-1">Pacientes Internados</label>
+                                        <input type="number" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500" value={intUTI} onChange={e => savePatientsCount(p.id, 'UTI', e.target.value)} />
                                     </div>
-                                    <div className="text-center bg-slate-950 p-6 rounded-2xl border border-slate-800 min-w-[120px]">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Avaliados</div>
-                                        <div className="text-3xl font-black text-red-500">{recsUTI.length} / {metaUTI}</div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-slate-400 block mb-1">Amostra Mín (40%)</label>
+                                        <div className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-slate-400 font-medium">{mUTI}</div>
                                     </div>
                                 </div>
-                                <button onClick={() => createNewRecord(p.id, 'UTI')} className="w-full py-5 bg-red-600 hover:bg-red-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg">+ Nova Avaliação UTI</button>
+                                <button onClick={() => createNewRecord(p.id, 'UTI')} className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm font-medium transition-colors">Nova Auditoria UTI</button>
                             </div>
                         </div>
 
-                        <div className="space-y-6 pt-4">
-                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Prontuários Em Avaliação</h2>
-                                <button onClick={() => setView('COMPILADO_PERIODO')} className="px-6 py-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg">
-                                    <Icons.Chart /> Gráficos e Compilado do Mês
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {db.records.filter(r => r.periodId === p.id).map(r => {
-                                    const progress = Math.round((Object.keys(r.answers).length / 32) * 100);
-                                    return (
-                                        <div key={r.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4">
-                                            <div className="flex justify-between items-start">
-                                                <div className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${r.sector==='UPI' ? 'bg-blue-600/20 text-blue-500' : 'bg-red-600/20 text-red-500'}`}>{r.sector}</div>
-                                                <button onClick={() => deleteRecord(r.id)} className="text-slate-600 hover:text-red-500 transition-colors"><Icons.Trash /></button>
-                                            </div>
-                                            <div>
-                                                <div className="text-xl font-black">{r.prontuario || 'Prontuário N/I'}</div>
-                                                <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">Auditor: {r.auditor}</div>
-                                            </div>
-                                            <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                                                <div className={`h-full ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{width: `${progress}%`}}></div>
-                                            </div>
-                                            <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors mt-2">Continuar Avaliação</button>
-                                        </div>
-                                    )
-                                })}
-                                {db.records.filter(r => r.periodId === p.id).length === 0 && (
-                                    <div className="col-span-full text-center py-10 text-slate-500 text-sm italic font-bold">Nenhum prontuário avaliado neste período. Inicie uma auditoria acima.</div>
-                                )}
-                            </div>
+                        <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden mt-6">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-900 border-b border-slate-700">
+                                    <tr>
+                                        <th className="p-4 font-semibold text-slate-400">Setor</th>
+                                        <th className="p-4 font-semibold text-slate-400">Prontuário</th>
+                                        <th className="p-4 font-semibold text-slate-400">Auditor</th>
+                                        <th className="p-4 font-semibold text-slate-400">Progresso</th>
+                                        <th className="p-4 font-semibold text-slate-400 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700">
+                                    {recs.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-slate-500">Nenhuma avaliação iniciada.</td></tr>}
+                                    {recs.map(r => {
+                                        const progress = Math.round((Object.keys(r.answers).length / 32) * 100);
+                                        return (
+                                            <tr key={r.id} className="hover:bg-slate-700/30 transition-colors">
+                                                <td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold rounded ${r.sector==='UPI' ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'}`}>{r.sector}</span></td>
+                                                <td className="p-4 font-medium text-slate-200">{r.prontuario || '-'}</td>
+                                                <td className="p-4 text-slate-400">{r.auditor}</td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-24 h-1.5 bg-slate-900 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{width: `${progress}%`}}></div></div>
+                                                        <span className="text-[10px] text-slate-400">{progress}%</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-right flex justify-end gap-3">
+                                                    <button onClick={() => { setSelectedRecord(r.id); setView('AVALIACAO'); }} className="text-blue-500 hover:text-blue-400 font-medium text-sm">Editar</button>
+                                                    <button onClick={() => deleteRecord(r.id)} className="text-slate-500 hover:text-red-500"><Icons.Trash /></button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )
@@ -418,91 +421,51 @@
             const renderAvaliacao = () => {
                 const rec = db.records.find(x => x.id === selectedRecord);
                 if(!rec) return null;
-
-                const progress = Math.round((Object.keys(rec.answers).length / 32) * 100);
                 const sections = [...new Set(PERGUNTAS_AUDITORIA.map(q => q.sec))];
 
-                const copyAuditReport = () => {
-                    const naoAnswers = PERGUNTAS_AUDITORIA.filter(q => rec.answers[q.id] === 'NÃO');
-                    let report = `*RELATÓRIO DE AUDITORIA SAE - HACO*\nSetor: ${rec.sector} | Prontuário: ${rec.prontuario || 'N/I'}\nAuditor: ${rec.auditor}\nData: ${rec.date}\n-----------------------------------\n*NÃO CONFORMIDADES (FALHAS):*\n\n`;
-                    if (naoAnswers.length === 0) report += "Padrão Ouro. Nenhuma falha identificada.";
-                    else naoAnswers.forEach(q => { report += `[${q.sec}] - ${q.text}\n`; });
-                    navigator.clipboard.writeText(report);
-                    alert("Relatório de Não Conformidades copiado para área de transferência!");
-                };
-
-                const copyFormatExcel = () => {
-                    let answersArray = [];
-                    for(let i = 1; i <= 32; i++) {
-                        const ans = rec.answers[i];
-                        if(ans === 'SIM') answersArray.push('x\t\t');
-                        else if(ans === 'NÃO') answersArray.push('\tx\t');
-                        else if(ans === 'NA') answersArray.push('\t\tx');
-                        else answersArray.push('\t\t'); 
-                    }
-                    navigator.clipboard.writeText(answersArray.join('\n'));
-                    alert("Dados copiados no formato da planilha (vertical)! Cole na célula correspondente à Pergunta 1.");
-                };
-
                 return (
-                    <div className="space-y-10 animate-fade max-w-6xl mx-auto p-4 md:p-8">
-                        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-slate-800 pb-8 sticky top-0 bg-[#0f172a] z-10 pt-4">
-                            <div className="flex items-center gap-6">
-                                <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icons.Back /></button>
-                                <div>
-                                    <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Auditoria de Prontuário</h1>
-                                    <div className="flex items-center gap-3 mt-2">
-                                        <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${rec.sector==='UPI' ? 'bg-blue-600/20 text-blue-500' : 'bg-red-600/20 text-red-500'}`}>{rec.sector}</span>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{progress}% Auditado</span>
-                                    </div>
-                                </div>
+                    <div className="max-w-4xl mx-auto space-y-6 animate-fade pb-20">
+                        <header className="flex items-center justify-between border-b border-slate-700 pb-4 mb-6 sticky top-0 bg-[#0f172a] pt-4 z-10">
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-xl font-bold text-white">Formulário de Auditoria</h1>
+                                <span className={`px-2 py-1 text-[10px] font-bold rounded ${rec.sector==='UPI' ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'}`}>{rec.sector}</span>
                             </div>
-                            <div className="flex gap-4">
-                                <button onClick={copyFormatExcel} className="hidden md:flex px-6 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
-                                    <Icons.Table /> Formato Excel
-                                </button>
-                                <button onClick={copyAuditReport} className="px-6 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center gap-2">
-                                    <Icons.ClipboardCheck /> Relatório WhatsApp
-                                </button>
-                            </div>
+                            <button onClick={() => setView('PERIODO')} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                                <Icons.Save size={16}/> Salvar Avaliação
+                            </button>
                         </header>
 
-                        {/* META DADOS */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Nº Prontuário</label>
-                                <input className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
+                        <div className="bg-slate-800 p-5 rounded-md border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Nº Prontuário</label>
+                                <input className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.prontuario} onChange={e => updateRecordMeta(rec.id, 'prontuario', e.target.value)} />
                             </div>
-                            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Auditor Responsável</label>
-                                <select className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Auditor</label>
+                                <select className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.auditor} onChange={e => updateRecordMeta(rec.id, 'auditor', e.target.value)}>
                                     {AVALIADORES.map(a => <option key={a} value={a}>{a}</option>)}
                                 </select>
                             </div>
-                            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-3">Data da Auditoria</label>
-                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-4 text-sm text-white font-bold outline-none focus:border-blue-500" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Data</label>
+                                <input type="date" className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white outline-none focus:border-blue-500 text-sm" value={rec.date} onChange={e => updateRecordMeta(rec.id, 'date', e.target.value)} />
                             </div>
                         </div>
 
-                        {/* LISTA DE AUDITORIA (32 PERGUNTAS) */}
-                        <div className="space-y-16 pt-6">
+                        <div className="space-y-8">
                             {sections.map(sec => {
                                 const qs = PERGUNTAS_AUDITORIA.filter(q => q.sec === sec);
                                 return (
-                                    <div key={sec} className="space-y-6">
-                                        <h3 className="text-sm font-black uppercase text-slate-400 tracking-[0.3em] border-l-4 border-blue-600 pl-4">{sec}</h3>
-                                        <div className="grid grid-cols-1 gap-4">
+                                    <div key={sec} className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden">
+                                        <div className="bg-slate-900 px-4 py-3 border-b border-slate-700 text-xs font-semibold uppercase text-slate-300">{sec}</div>
+                                        <div className="divide-y divide-slate-700/50">
                                             {qs.map(q => (
-                                                <div key={q.id} className="bg-slate-900 p-6 lg:p-8 rounded-[2rem] border border-slate-800 flex flex-col xl:flex-row justify-between xl:items-center gap-6 hover:border-slate-700 transition-colors shadow-sm">
-                                                    <div className="flex gap-6 items-start">
-                                                        <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center font-black text-slate-500 shrink-0 border border-slate-800">{q.id}</div>
-                                                        <p className="text-sm md:text-base font-semibold text-slate-200 leading-relaxed mt-2.5">{q.text}</p>
-                                                    </div>
-                                                    <div className="flex gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800 shrink-0 w-full xl:w-auto">
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`flex-1 xl:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'SIM' ? 'bg-green-600 text-white shadow-[0_0_15px_rgba(22,163,74,0.4)]' : 'text-slate-500 hover:bg-slate-900 hover:text-green-500'}`}><Icons.Check/> SIM</button>
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NÃO')} className={`flex-1 xl:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NÃO' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'text-slate-500 hover:bg-slate-900 hover:text-red-500'}`}><Icons.X/> NÃO</button>
-                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NA')} className={`flex-1 xl:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-xs font-black transition-all ${rec.answers[q.id] === 'NA' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:bg-slate-900 hover:text-white'}`}><Icons.Minus/> N/A</button>
+                                                <div key={q.id} className="p-4 flex flex-col md:flex-row justify-between md:items-center gap-4 hover:bg-slate-700/20 transition-colors">
+                                                    <div className="text-sm text-slate-200 flex-1"><span className="text-slate-500 mr-2">{q.id}.</span> {q.text}</div>
+                                                    <div className="flex gap-1 shrink-0 bg-slate-900 p-1 rounded-md border border-slate-700">
+                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'SIM')} className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${rec.answers[q.id] === 'SIM' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>SIM</button>
+                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NÃO')} className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${rec.answers[q.id] === 'NÃO' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>NÃO</button>
+                                                        <button onClick={() => answerQuestion(rec.id, q.id, 'NA')} className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${rec.answers[q.id] === 'NA' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>N/A</button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -517,8 +480,8 @@
 
             const renderCompiladoPeriodo = () => {
                 const p = PERIODOS.find(x => x.id === selectedPeriod);
-                const internadosUPI = parseInt(db.internados[p.id]?.UPI) || 0;
-                const internadosUTI = parseInt(db.internados[p.id]?.UTI) || 0;
+                const intUPI = parseInt(db.internados[p.id]?.UPI) || 0;
+                const intUTI = parseInt(db.internados[p.id]?.UTI) || 0;
                 const recsUPI = db.records.filter(r => r.periodId === p.id && r.sector === 'UPI');
                 const recsUTI = db.records.filter(r => r.periodId === p.id && r.sector === 'UTI');
                 const recs = [...recsUPI, ...recsUTI];
@@ -526,72 +489,61 @@
                 const { qStats, globalPct, sections } = calculateStats(recs);
 
                 return (
-                    <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
-                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('PERIODO')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icons.Back /></button>
-                            <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Analytics do Período</h1>
-                                <p className="text-blue-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">{p.label}</p>
+                    <div className="max-w-6xl mx-auto space-y-6 animate-fade pb-10 print-container">
+                        <header className="flex justify-between items-end border-b border-slate-700 pb-4 mb-6">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setView('PERIODO')} className="text-slate-400 hover:text-white transition-colors no-print"><Icons.Back /></button>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-white print-text-dark">Relatório do Período</h1>
+                                    <p className="text-sm text-slate-400 mt-1">{p.label}</p>
+                                </div>
                             </div>
+                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print">
+                                <Icons.Pdf size={16}/> Gerar PDF
+                            </button>
                         </header>
 
-                        {/* GRÁFICOS DE AMOSTRAGEM */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {renderAmostragemChart(internadosUPI, recsUPI.length, `Internados x Avaliados - UPI`)}
-                            {renderAmostragemChart(internadosUTI, recsUTI.length, `Internados x Avaliados - UTI`)}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderAmostragemChart(intUPI, recsUPI.length, intUTI, recsUTI.length)}
+                            {renderFaltasConsolidadasChart(qStats, sections)}
                         </div>
 
-                        {/* FALTAS POR ETAPA */}
-                        <div className="space-y-6 pt-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Porcentagem de Faltas (Não Conformidades) por Etapa</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {sections.map(sec => renderFaltasChart(qStats, sec))}
-                            </div>
-                        </div>
-
-                        {/* TABELA DE DADOS BRUTOS */}
-                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl mt-10">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[800px]">
-                                    <thead>
-                                        <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <th className="p-6 border-b border-slate-800">ID</th>
-                                            <th className="p-6 border-b border-slate-800">Critério Avaliado da Resolução</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
-                                            <th className="p-6 border-b border-slate-800 text-center">N/A</th>
-                                            <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
+                        <div className="bg-slate-800 border border-slate-700 rounded-md overflow-hidden mt-6 print-bg-white">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-900 border-b border-slate-700 print-bg-white">
+                                    <tr>
+                                        <th className="p-3 font-semibold text-slate-400 print-text-dark">Critério Avaliado da Resolução 736/2024</th>
+                                        <th className="p-3 font-semibold text-slate-400 text-center print-text-dark">SIM</th>
+                                        <th className="p-3 font-semibold text-slate-400 text-center print-text-dark">NÃO</th>
+                                        <th className="p-3 font-semibold text-slate-400 text-center print-text-dark">N/A</th>
+                                        <th className="p-3 font-semibold text-slate-400 text-right print-text-dark">Conformidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700">
+                                    {qStats.map(s => (
+                                        <tr key={s.id}>
+                                            <td className="p-3 text-slate-200 print-text-dark"><span className="text-slate-500 mr-2">{s.id}.</span>{s.text}</td>
+                                            <td className="p-3 text-center font-medium text-blue-400 print-text-dark">{s.sim}</td>
+                                            <td className="p-3 text-center font-medium text-amber-500 print-text-dark">{s.nao}</td>
+                                            <td className="p-3 text-center text-slate-500 print-text-dark">{s.na}</td>
+                                            <td className="p-3 text-right">
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${s.pct >= 80 ? 'bg-emerald-900/50 text-emerald-400' : s.pct >= 50 ? 'bg-amber-900/50 text-amber-400' : 'bg-red-900/50 text-red-400'} print-bg-white print-text-dark`}>
+                                                    {s.pct}%
+                                                </span>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {qStats.map(s => (
-                                            <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                                <td className="p-6 text-sm font-black text-slate-500">Q{s.id}</td>
-                                                <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
-                                                <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
-                                                <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
-                                                <td className="p-6 text-center text-sm font-black text-slate-500">{s.na}</td>
-                                                <td className="p-6 text-right">
-                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
-                                                        {s.pct}%
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 );
             };
 
             const renderCompiladoAnual = () => {
-                const { qStats, globalPct, totalNaoGeral, sections } = calculateStats(db.records);
+                const { qStats, globalPct, sections } = calculateStats(db.records);
 
-                let totalIntUPI = 0, totalIntUTI = 0;
-                let totalAvUPI = 0, totalAvUTI = 0;
-
+                let totalIntUPI = 0, totalIntUTI = 0, totalAvUPI = 0, totalAvUTI = 0;
                 PERIODOS.forEach(p => {
                     totalIntUPI += parseInt(db.internados[p.id]?.UPI) || 0;
                     totalIntUTI += parseInt(db.internados[p.id]?.UTI) || 0;
@@ -609,139 +561,87 @@
                 const lineData = {
                     labels: trendLabels,
                     datasets: [{
-                        label: 'Conformidade (%)',
+                        label: 'Conformidade Geral (%)',
                         data: trendData,
-                        borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderWidth: 3, tension: 0.4, fill: true,
-                        pointBackgroundColor: '#0f172a', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 6
+                        borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2, tension: 0.3, fill: true,
+                        pointBackgroundColor: '#0f172a', pointBorderColor: '#10b981'
                     }]
                 };
 
                 const lineOptions = {
                     responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } }, x: { grid: { display: false } } },
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } },
                     plugins: { legend: { display: false } }
                 };
 
                 return (
-                    <div className="space-y-10 animate-fade max-w-7xl mx-auto p-4 md:p-8">
-                        <header className="flex items-center gap-6 border-b border-slate-800 pb-8">
-                            <button onClick={() => setView('DASHBOARD')} className="p-4 bg-slate-900 hover:bg-slate-800 rounded-2xl transition-colors"><Icons.Back /></button>
-                            <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white">Relatório Anual Consolidado</h1>
-                                <p className="text-green-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Visão Estratégica CSAE-HACO</p>
+                    <div className="max-w-6xl mx-auto space-y-6 animate-fade pb-10 print-container">
+                        <header className="flex justify-between items-end border-b border-slate-700 pb-4 mb-6">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setView('DASHBOARD')} className="text-slate-400 hover:text-white transition-colors no-print"><Icons.Back /></button>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-white print-text-dark">Relatório Anual Consolidado</h1>
+                                    <p className="text-sm text-slate-400 mt-1">Evolução de Qualidade Assistencial</p>
+                                </div>
                             </div>
+                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors no-print">
+                                <Icons.Pdf size={16}/> Gerar PDF
+                            </button>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {renderAmostragemChart(totalIntUPI, totalAvUPI, `Acumulado Anual: Internados x Avaliados - UPI`)}
-                            {renderAmostragemChart(totalIntUTI, totalAvUTI, `Acumulado Anual: Internados x Avaliados - UTI`)}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 pt-6">
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-col justify-center">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Conformidade Anual</div>
-                                <div className="text-6xl font-black text-green-500">{globalPct}%</div>
-                                <div className="mt-6 space-y-2 border-t border-slate-800 pt-6">
-                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Prontuários Lidos</span><span className="text-white">{db.records.length}</span></div>
-                                    <div className="flex justify-between text-xs font-bold text-slate-400"><span>Total de Falhas</span><span className="text-red-500">{totalNaoGeral}</span></div>
-                                </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div className="bg-slate-800 p-6 rounded-md border border-slate-700 flex flex-col justify-center print-bg-white print-break-avoid">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 print-text-dark">Conformidade Anual</div>
+                                <div className="text-5xl font-bold text-emerald-500">{globalPct}%</div>
                             </div>
-                            
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl lg:col-span-3 flex flex-col">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Tendência de Qualidade (Evolução Mensal)</div>
-                                <div className="flex-1 min-h-[250px]">
-                                    <ChartComponent type="line" data={lineData} options={lineOptions} height="100%" />
-                                </div>
+                            <div className="bg-slate-800 p-6 rounded-md border border-slate-700 lg:col-span-2 flex flex-col h-64 print-bg-white print-break-avoid">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4 print-text-dark">Linha de Tendência Mensal</div>
+                                <div className="flex-1"><ChartComponent type="line" data={lineData} options={lineOptions} height="100%" /></div>
                             </div>
                         </div>
 
-                        <div className="space-y-6 pt-6">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Faltas por Etapa (Acumulado Anual)</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {sections.map(sec => renderFaltasChart(qStats, sec))}
-                            </div>
-                        </div>
-
-                        <div className="bg-slate-900 rounded-[3rem] border border-slate-800 overflow-hidden shadow-2xl mt-10">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[800px]">
-                                    <thead>
-                                        <tr className="bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <th className="p-6 border-b border-slate-800">ID</th>
-                                            <th className="p-6 border-b border-slate-800">Critério (Acumulado Anual)</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-blue-500">SIM</th>
-                                            <th className="p-6 border-b border-slate-800 text-center text-red-500">NÃO</th>
-                                            <th className="p-6 border-b border-slate-800 text-right">Conformidade</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {qStats.map(s => (
-                                            <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
-                                                <td className="p-6 text-sm font-black text-slate-500">Q{s.id}</td>
-                                                <td className="p-6 text-xs font-semibold text-slate-200">{s.text}</td>
-                                                <td className="p-6 text-center text-sm font-black text-blue-500">{s.sim}</td>
-                                                <td className="p-6 text-center text-sm font-black text-red-500">{s.nao}</td>
-                                                <td className="p-6 text-right">
-                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-black ${s.pct >= 80 ? 'bg-green-600/20 text-green-500' : s.pct >= 50 ? 'bg-amber-500/20 text-amber-500' : 'bg-red-600/20 text-red-500'}`}>
-                                                        {s.pct}%
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderAmostragemChart(totalIntUPI, totalAvUPI, totalIntUTI, totalAvUTI)}
+                            {renderFaltasConsolidadasChart(qStats, sections)}
                         </div>
                     </div>
                 );
             };
 
-            const MobileNav = () => (
-                <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe">
-                    <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'text-blue-500' : 'text-slate-500'}`}>
-                        <Icons.Dashboard />
-                        <span className="text-[8px] font-bold mt-1">Painel</span>
-                    </button>
-                    {selectedPeriod && (
-                        <button onClick={() => setView('PERIODO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'text-blue-500' : 'text-slate-500'}`}>
-                            <Icons.ActivityDoc />
-                            <span className="text-[8px] font-bold mt-1">Amostra</span>
-                        </button>
-                    )}
-                    {selectedRecord && (
-                        <button onClick={() => setView('AVALIACAO')} className={`flex flex-col items-center justify-center w-16 h-full ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500'}`}>
-                            <Icons.FileCheck />
-                            <span className="text-[8px] font-bold mt-1">Auditoria</span>
-                        </button>
-                    )}
-                </div>
-            );
-
             return (
-                <div className="h-screen w-full flex flex-col md:flex-row bg-slate-950 overflow-hidden">
-                    {/* SIDEBAR DESKTOP */}
-                    <div className="hidden md:flex w-20 lg:w-24 bg-slate-900 border-r border-slate-800 flex-col items-center py-8 z-50 shrink-0">
-                        <div className="p-3 bg-blue-600 rounded-xl shadow-lg mb-8"><Icons.Shield size={24}/></div>
-                        <div className="flex flex-col gap-4 w-full px-4">
-                            <button onClick={() => setView('DASHBOARD')} title="Painel de Controle" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.Dashboard /></button>
-                            {selectedPeriod && <button onClick={() => setView('PERIODO')} title="Amostragem" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.ActivityDoc /></button>}
-                            {selectedRecord && <button onClick={() => setView('AVALIACAO')} title="Auditoria em Andamento" className={`p-3 w-full flex justify-center rounded-xl transition-all ${view === 'AVALIACAO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}><Icons.FileCheck /></button>}
+                <div className="flex min-h-screen">
+                    {/* SIDEBAR */}
+                    <div className="w-16 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col no-print shrink-0">
+                        <div className="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-800">
+                            <Icons.Shield size={24} className="text-blue-500" />
+                            <span className="ml-3 font-bold text-white hidden md:block tracking-wide">CSAE HACO</span>
                         </div>
-                        <div className="mt-auto opacity-30 text-[8px] font-black uppercase text-center tracking-widest">CSAE<br/>HACO</div>
+                        <div className="p-4 flex flex-col gap-2">
+                            <button onClick={() => setView('DASHBOARD')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                                <Icons.Dashboard /> <span className="hidden md:block text-sm font-medium">Dashboard</span>
+                            </button>
+                            {selectedPeriod && (
+                                <button onClick={() => setView('PERIODO')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                                    <Icons.Folder /> <span className="hidden md:block text-sm font-medium">Período Ativo</span>
+                                </button>
+                            )}
+                            {selectedRecord && (
+                                <button onClick={() => setView('AVALIACAO')} className={`flex items-center gap-3 p-3 rounded-md transition-colors ${view === 'AVALIACAO' ? 'bg-blue-600/10 text-blue-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                                    <Icons.FileEdit /> <span className="hidden md:block text-sm font-medium">Auditoria Atual</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* CONTEÚDO DINÂMICO */}
-                    <div className="flex-1 overflow-y-auto h-full relative custom-scrollbar bg-slate-950">
+                    {/* CONTEÚDO */}
+                    <div className="flex-1 bg-slate-950 overflow-y-auto h-screen p-4 md:p-8 custom-scrollbar">
                         {view === 'DASHBOARD' && renderDashboard()}
                         {view === 'PERIODO' && renderPeriodo()}
                         {view === 'AVALIACAO' && renderAvaliacao()}
                         {view === 'COMPILADO_PERIODO' && renderCompiladoPeriodo()}
                         {view === 'COMPILADO_ANUAL' && renderCompiladoAnual()}
                     </div>
-
-                    {/* NAVEGAÇÃO MOBILE */}
-                    <MobileNav />
                 </div>
             );
         };
