@@ -31,7 +31,10 @@
             .no-print { display: none !important; }
             .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
             .print-bg-white { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+            .print-text-dark { color: #0f172a !important; }
+            .print-text-muted { color: #64748b !important; }
             .print-break-avoid { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
+            canvas { min-height: 250px !important; }
         }
     </style>
 </head>
@@ -72,11 +75,9 @@
             Cloud: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
             Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
             ChevronDown: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>,
-            ChevronUp: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>,
             Activity: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-            Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
-            ClipboardCopy: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
-            Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
+            Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
         };
 
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
@@ -164,7 +165,7 @@
         };
 
         // =====================================================================
-        // MÓDULO NOVO (V33): CALCULADORA RÁPIDA DE ESCALAS (TOTALMENTE ISOLADO)
+        // MÓDULO NOVO (V34): CALCULADORA RÁPIDA DE ESCALAS (TOTALMENTE ISOLADA)
         // =====================================================================
         const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
         const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", lo: "Locomoção", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminações", te: "Terapêutica" };
@@ -204,15 +205,33 @@
 
         const CalculadorasApp = () => {
             const initialState = {
-                braden: { p:4, u:4, a:4, m:4, n:4, f:3 },
-                morse: { h:0, d:0, a:0, t:0, m:0, e:0 },
-                fugulin: { em:1, ox:1, sv:1, mo:1, lo:1, al:1, cc:1, el:1, te:1 }
+                braden: { p:null, u:null, a:null, m:null, n:null, f:null },
+                morse: { h:null, d:null, a:null, t:null, m:null, e:null },
+                fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null }
             };
             const [escalas, setEscalas] = useState(initialState);
 
-            const bradenCalc = useMemo(() => { const b=escalas.braden; const t=b.p+b.u+b.a+b.m+b.n+b.f; return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; }, [escalas.braden]);
-            const morseCalc = useMemo(() => { const m=escalas.morse; const t=m.h+m.d+m.a+m.t+m.m+m.e; return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; }, [escalas.morse]);
-            const fugulinCalc = useMemo(() => { const t=Object.values(escalas.fugulin).reduce((a,b)=>a+b,0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; }, [escalas.fugulin]);
+            const bradenCalc = useMemo(() => { 
+                const b=escalas.braden; 
+                if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
+                const t=(b.p||0)+(b.u||0)+(b.a||0)+(b.m||0)+(b.n||0)+(b.f||0); 
+                return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; 
+            }, [escalas.braden]);
+
+            const morseCalc = useMemo(() => { 
+                const m=escalas.morse; 
+                if(m.h===null && m.d===null && m.a===null && m.t===null && m.m===null && m.e===null) return {t: 0, r: "Pendente"};
+                const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); 
+                return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
+            }, [escalas.morse]);
+
+            const fugulinCalc = useMemo(() => { 
+                const f = escalas.fugulin;
+                const vals = Object.values(f);
+                if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
+                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); 
+                return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
+            }, [escalas.fugulin]);
 
             const reset = () => {
                 if(window.confirm("Limpar todos os dados das escalas?")) {
@@ -230,7 +249,7 @@
                                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido (Sem Vínculo com Prontuário)</p>
                             </div>
                         </div>
-                        <button onClick={reset} className="w-full md:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 shadow-sm">
+                        <button onClick={reset} className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-3 shadow-sm">
                             <Icons.Trash size={18}/> Limpar Dados
                         </button>
                     </header>
@@ -238,14 +257,11 @@
                     <div className="space-y-8">
                         {/* Braden */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col lg:flex-row justify-between lg:items-center bg-slate-950 p-4 md:p-6 rounded-2xl mb-8 border border-slate-800 gap-4">
-                                <h2 className="text-xl md:text-2xl font-black uppercase text-blue-500">Escala de Braden</h2>
-                                <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-6 py-4 lg:min-w-[250px] justify-center gap-4 shadow-inner">
-                                    <div className="text-4xl md:text-5xl font-black text-white">{bradenCalc.t}</div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pontos</span>
-                                        <span className="text-sm md:text-base font-black text-blue-400 uppercase tracking-wider">{bradenCalc.r}</span>
-                                    </div>
+                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                <h2 className="text-sm font-black uppercase tracking-widest text-blue-500 mb-2">Escala de Braden</h2>
+                                <div className="text-6xl font-black text-white mb-2">{bradenCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${bradenCalc.t > 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                                    {bradenCalc.r}
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -255,14 +271,11 @@
 
                         {/* Fugulin */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col lg:flex-row justify-between lg:items-center bg-slate-950 p-4 md:p-6 rounded-2xl mb-8 border border-slate-800 gap-4">
-                                <h2 className="text-xl md:text-2xl font-black uppercase text-emerald-500">Escala de Fugulin</h2>
-                                <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-6 py-4 lg:min-w-[250px] justify-center gap-4 shadow-inner">
-                                    <div className="text-4xl md:text-5xl font-black text-white">{fugulinCalc.t}</div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pontos</span>
-                                        <span className="text-sm md:text-base font-black text-emerald-400 uppercase tracking-wider">{fugulinCalc.d}</span>
-                                    </div>
+                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin</h2>
+                                <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                                    {fugulinCalc.d}
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -272,14 +285,11 @@
 
                         {/* Morse */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col lg:flex-row justify-between lg:items-center bg-slate-950 p-4 md:p-6 rounded-2xl mb-8 border border-slate-800 gap-4">
-                                <h2 className="text-xl md:text-2xl font-black uppercase text-purple-500">Escala de Morse</h2>
-                                <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-6 py-4 lg:min-w-[250px] justify-center gap-4 shadow-inner">
-                                    <div className="text-4xl md:text-5xl font-black text-white">{morseCalc.t}</div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pontos</span>
-                                        <span className="text-sm md:text-base font-black text-purple-400 uppercase tracking-wider">{morseCalc.r}</span>
-                                    </div>
+                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                <h2 className="text-sm font-black uppercase tracking-widest text-purple-500 mb-2">Escala de Morse</h2>
+                                <div className="text-6xl font-black text-white mb-2">{morseCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${morseCalc.t > 0 ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                                    {morseCalc.r}
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -297,47 +307,34 @@
         };
 
         // =====================================================================
-        // MÓDULO INTOCÁVEL: ASSISTENTE SOIC CLÍNICO (NANDA EXPANDIDO)
+        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (NANDA EXPANDIDO V34)
         // =====================================================================
         const nandaIntegral = [
-            { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento propenso a risco", "Síndrome do idoso frágil"] },
-            { d: 2, name: "Nutrição", diagnoses: ["Deglutição prejudicada", "Nutrição desequilibrada: menor que as necessidades", "Volume de líquidos deficiente", "Excesso de volume de líquidos", "Risco de glicemia instável", "Risco de desequilíbrio eletrolítico", "Função hepática prejudicada"] },
-            { d: 3, name: "Eliminação e Troca", diagnoses: ["Eliminação urinária prejudicada", "Retenção urinária", "Incontinência urinária", "Constipação", "Risco de constipação", "Diarreia", "Incontinência fecal", "Motilidade gastrintestinal disfuncional", "Troca de gases prejudicada", "Função gastrintestinal prejudicada"] },
-            { d: 4, name: "Atividade/Repouso", diagnoses: ["Distúrbio no padrão do sono", "Privação de sono", "Mobilidade física prejudicada", "Mobilidade no leito prejudicada", "Débito cardíaco diminuído", "Padrão respiratório ineficaz", "Limpeza ineficaz de vias aéreas", "Resposta disfuncional ao desmame ventilatório", "Perfusão tissular periférica ineficaz", "Ventilação espontânea prejudicada", "Intolerância à atividade", "Risco de sangramento", "Fadiga", "Déficit no autocuidado para banho/higiene", "Déficit no autocuidado para alimentação"] },
-            { d: 5, name: "Percepção/Cognição", diagnoses: ["Confusão aguda", "Confusão crônica", "Memória prejudicada", "Comunicação verbal prejudicada", "Conhecimento deficiente"] },
-            { d: 6, name: "Autopercepção", diagnoses: ["Desesperança", "Autoestima baixa", "Distúrbio na imagem corporal", "Risco de dignidade humana comprometida"] },
-            { d: 7, name: "Papéis e Relações", diagnoses: ["Processos familiares disfuncionais", "Tensão do papel de cuidador", "Interação social prejudicada", "Desempenho de papel ineficaz"] },
-            { d: 8, name: "Sexualidade", diagnoses: ["Padrão de sexualidade ineficaz", "Disfunção sexual"] },
-            { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto", "Enfrentamento ineficaz", "Síndrome do trauma de estupro"] },
-            { d: 10, name: "Princípios de Vida", diagnoses: ["Sofrimento espiritual", "Não adesão", "Conflito de decisões"] },
-            { d: 11, name: "Segurança/Proteção", diagnoses: ["Risco de infecção", "Integridade da pele prejudicada", "Integridade tissular prejudicada", "Risco de lesão por pressão", "Risco de queda", "Risco de aspiração", "Risco de choque", "Risco de trauma vascular", "Termorregulação ineficaz", "Hipertermia", "Hipotermia"] },
-            { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Conforto prejudicado", "Náusea", "Isolamento social"] },
-            { d: 13, name: "Cresc. e Desenvolv.", diagnoses: ["Atraso no desenvolvimento corporal", "Risco de crescimento desproporcional"] }
+            { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento de saúde propenso a risco", "Síndrome do idoso frágil", "Autogestão ineficaz da saúde", "Prontidão para autogestão aprimorada da saúde", "Comportamentos de manutenção doméstica ineficazes"] },
+            { d: 2, name: "Nutrição", diagnoses: ["Deglutição prejudicada", "Nutrição desequilibrada: menor que as necessidades", "Volume de líquidos deficiente", "Risco de volume de líquidos deficiente", "Excesso de volume de líquidos", "Risco de desequilíbrio eletrolítico", "Risco de glicemia instável", "Função hepática prejudicada", "Risco de função hepática prejudicada", "Produção insuficiente de leite materno", "Amamentação ineficaz", "Dinâmica alimentar infantil ineficaz", "Obesidade", "Sobrepeso", "Risco de sobrepeso", "Resposta ineficaz de sucção e deglutição do bebê"] },
+            { d: 3, name: "Eliminação e Troca", diagnoses: ["Eliminação urinária prejudicada", "Retenção urinária", "Risco de retenção urinária", "Incontinência urinária de esforço", "Incontinência urinária de urgência", "Incontinência urinária mista", "Incontinência urinária associada à deficiência", "Constipação", "Risco de constipação", "Constipação percebida", "Constipação funcional crônica", "Risco de constipação funcional crônica", "Continência intestinal prejudicada", "Diarreia", "Incontinência fecal", "Motilidade gastrintestinal disfuncional", "Risco de motilidade gastrintestinal disfuncional", "Troca de gases prejudicada", "Função gastrintestinal prejudicada"] },
+            { d: 4, name: "Atividade/Repouso", diagnoses: ["Distúrbio no padrão do sono", "Privação de sono", "Prontidão para sono aprimorado", "Insônia", "Diminuição da tolerância à atividade", "Risco de diminuição da tolerância à atividade", "Mobilidade física prejudicada", "Mobilidade no leito prejudicada", "Mobilidade em cadeira de rodas prejudicada", "Risco de síndrome do desuso", "Fadiga", "Débito cardíaco diminuído", "Risco de diminuição do débito cardíaco", "Risco de função cardiovascular prejudicada", "Padrão respiratório ineficaz", "Limpeza ineficaz de vias aéreas", "Resposta disfuncional ao desmame ventilatório", "Perfusão tissular periférica ineficaz", "Risco de perfusão tissular periférica ineficaz", "Ventilação espontânea prejudicada", "Risco de sangramento", "Risco de trombose", "Déficit no autocuidado para banho/higiene", "Déficit no autocuidado para alimentação", "Déficit no autocuidado para vestir-se", "Déficit no autocuidado para eliminação"] },
+            { d: 5, name: "Percepção/Cognição", diagnoses: ["Confusão aguda", "Risco de confusão aguda", "Confusão crônica", "Memória prejudicada", "Conhecimento deficiente", "Prontidão para conhecimento aprimorado", "Comunicação verbal prejudicada", "Processo de pensamento perturbado", "Controle de impulso ineficaz", "Controle emocional instável", "Negligência unilateral"] },
+            { d: 6, name: "Autopercepção", diagnoses: ["Desesperança", "Risco de dignidade humana comprometida", "Autoestima baixa crônica", "Autoestima baixa situacional", "Distúrbio na imagem corporal", "Identidade pessoal perturbada"] },
+            { d: 7, name: "Papéis e Relações", diagnoses: ["Processos familiares disfuncionais", "Processos familiares interrompidos", "Tensão do papel de cuidador", "Risco de tensão do papel de cuidador", "Interação social prejudicada", "Desempenho de papel ineficaz", "Síndrome de identidade familiar perturbada", "Paternidade ou maternidade prejudicada"] },
+            { d: 8, name: "Sexualidade", diagnoses: ["Padrão de sexualidade ineficaz", "Disfunção sexual", "Processo de maternidade ineficaz", "Risco de processo de maternidade ineficaz", "Risco de díade materno-fetal perturbada"] },
+            { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto desadaptativo", "Risco de luto desadaptativo", "Enfrentamento ineficaz", "Enfrentamento familiar comprometido", "Impotência", "Risco de impotência", "Resiliência prejudicada", "Síndrome do trauma de estupro", "Síndrome do estresse de mudança", "Planejamento de atividades ineficaz", "Disreflexia autonômica", "Comportamento infantil desorganizado"] },
+            { d: 10, name: "Princípios de Vida", diagnoses: ["Sofrimento espiritual", "Risco de sofrimento espiritual", "Conflito de decisões", "Não adesão", "Angústia moral", "Religiosidade prejudicada"] },
+            { d: 11, name: "Segurança/Proteção", diagnoses: ["Risco de infecção", "Integridade da pele prejudicada", "Risco de integridade da pele prejudicada", "Integridade tissular prejudicada", "Risco de lesão por pressão em adulto", "Risco de lesão por pressão infantil", "Risco de lesão por pressão neonatal", "Risco de queda", "Risco de aspiração", "Risco de choque", "Risco de trauma vascular", "Risco de lesão do trato urinário", "Risco de lesão de posicionamento perioperatório", "Termorregulação ineficaz", "Hipertermia", "Hipotermia", "Risco de hipotermia", "Risco de reação alérgica", "Risco de comportamento suicida", "Automutilação"] },
+            { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Síndrome de dor crônica", "Dor do parto", "Conforto prejudicado", "Náusea", "Isolamento social"] },
+            { d: 13, name: "Cresc. e Desenvolv.", diagnoses: ["Atraso no desenvolvimento infantil", "Risco de atraso no desenvolvimento infantil", "Atraso no desenvolvimento motor infantil", "Risco de atraso no desenvolvimento motor infantil"] }
         ];
 
-        const InputField = ({ label, value, onChange }) => (
+        const InputField = ({ label, value, onChange, placeholder='' }) => (
             <div className="w-full mb-3">
                 <div className="text-[10px] font-bold uppercase text-slate-400 mb-1">{label}</div>
-                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" value={value} onChange={e => onChange(e.target.value)} />
+                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}/>
             </div>
         );
         const TextAreaField = ({ label, value, onChange, h="h-32" }) => (
             <div className="w-full mb-3">
                 <div className="text-[10px] font-bold uppercase text-slate-400 mb-1">{label}</div>
                 <textarea className={`w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white focus:border-blue-500 outline-none ${h}`} value={value} onChange={e => onChange(e.target.value)} />
-            </div>
-        );
-        const ScaleRadio = ({ label, options, values, value, onChange }) => (
-            <div className="space-y-1.5 mb-4">
-                <div className="text-[10px] font-bold uppercase text-blue-400">{label}</div>
-                <div className="flex flex-col gap-1">
-                    {options.map((opt, idx) => {
-                        const val = values ? values[idx] : idx + 1;
-                        return (
-                            <button key={idx} onClick={() => onChange(val)} className={`text-left px-3 py-2 rounded-lg text-[10px] font-bold transition-all ${value === val ? 'bg-blue-600 text-white' : 'bg-slate-800 border border-slate-700 text-slate-400'}`}>{opt}</button>
-                        );
-                    })}
-                </div>
             </div>
         );
 
@@ -347,26 +344,50 @@
             const [openScale, setOpenScale] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
             const [copySuccess, setCopySuccess] = useState(false);
-            const [form, setForm] = useState({
+            
+            const initialSoicState = {
                 adm: { procedencia: '', acompanhante: '', queixa: '', hpp: '' },
                 subjetivo: '', sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
                 exame: {}, vasculares: [], viasAereas: [], eliminações: [], diagnosticos: [],
                 interpretacao: '', condutas: [], obs: '',
-                escalas: { braden: { p:4, u:4, a:4, m:4, n:4, f:3 }, morse: { h:0, d:0, a:0, t:0, m:0, e:0 }, fugulin: { em:1, ox:1, sv:1, mo:1, lo:1, al:1, cc:1, el:1, te:1 } },
+                escalas: { 
+                    braden: { p:null, u:null, a:null, m:null, n:null, f:null }, 
+                    morse: { h:null, d:null, a:null, t:null, m:null, e:null }, 
+                    fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } 
+                },
                 alta: { condicoes: '', destino: '', orientacoes: '' }
-            });
+            };
+            const [form, setForm] = useState(initialSoicState);
 
-            const bradenCalc = useMemo(() => { const b=form.escalas.braden; const t=b.p+b.u+b.a+b.m+b.n+b.f; return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; }, [form.escalas.braden]);
-            const morseCalc = useMemo(() => { const m=form.escalas.morse; const t=m.h+m.d+m.a+m.t+m.m+m.e; return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; }, [form.escalas.morse]);
-            const fugulinCalc = useMemo(() => { const t=Object.values(form.escalas.fugulin).reduce((a,b)=>a+b,0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; }, [form.escalas.fugulin]);
+            const bradenCalc = useMemo(() => { 
+                const b=form.escalas.braden; 
+                if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
+                const t=(b.p||0)+(b.u||0)+(b.a||0)+(b.m||0)+(b.n||0)+(b.f||0); 
+                return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; 
+            }, [form.escalas.braden]);
+
+            const morseCalc = useMemo(() => { 
+                const m=form.escalas.morse; 
+                if(m.h===null && m.d===null && m.a===null && m.t===null && m.m===null && m.e===null) return {t: 0, r: "Pendente"};
+                const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); 
+                return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
+            }, [form.escalas.morse]);
+
+            const fugulinCalc = useMemo(() => { 
+                const f = form.escalas.fugulin;
+                const vals = Object.values(f);
+                if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
+                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); 
+                return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
+            }, [form.escalas.fugulin]);
 
             const generateText = () => {
                 if (activeTab === 'ADMISSAO') return `ADMISSÃO ENFERMAGEM - HACO\n----------------------------------\n[HISTÓRICO]\nProcedência: ${form.adm.procedencia||'--'}\nAcompanhante: ${form.adm.acompanhante||'--'}\nQueixa Principal: ${form.adm.queixa||'--'}\nHPP e Alergias: ${form.adm.hpp||'--'}\n\n[SINAIS VITAIS ENTRADA]\nPA: ${form.sv.pa||'-'} | FC: ${form.sv.fc||'-'} | FR: ${form.sv.fr||'-'}\nT: ${form.sv.temp||'-'} | Sat: ${form.sv.spo2||'-'}% | HGT: ${form.sv.hgt||'-'}\nDor (EVA): ${form.sv.eva||'-'}\n----------------------------------\n[Resolução 736/2024 - GT SAE HACO]`;
-                if (activeTab === 'ALTA') return `ALTA ENFERMAGEM - HACO\n----------------------------------\n- Condições de Alta: ${form.alta.condicoes||'--'}\n- Destino (Para onde): ${form.alta.destino||'--'}\n- Orientações Fornecidas: ${form.alta.orientacoes||'--'}\n----------------------------------\nPaciente ciente.`;
+                if (activeTab === 'ALTA') return `ALTA DE ENFERMAGEM - HACO\n----------------------------------\n- Condições de Alta: ${form.alta.condicoes||'--'}\n- Destino da Alta: ${form.alta.destino||'--'}\n- Orientações Fornecidas: ${form.alta.orientacoes||'--'}\n----------------------------------\nPaciente ciente.`;
                 
                 let text = `S: ${form.subjetivo || 'Paciente estável, sem queixas intercorrentes.'}\n\n`;
                 text += `O: [SINAIS VITAIS]\nPA: ${form.sv.pa||'-'} | FC: ${form.sv.fc||'-'} | FR: ${form.sv.fr||'-'} | T: ${form.sv.temp||'-'} | Sat: ${form.sv.spo2||'-'}% | EVA: ${form.sv.eva||'-'}\n\n`;
-                text += `[ESCALAS TÉCNICAS]\n- Braden: ${bradenCalc.t} (${bradenCalc.r})\n- Morse: ${morseCalc.t} (${morseCalc.r})\n- Fugulin: ${fugulinCalc.t} (${fugulinCalc.d})\n\n`;
+                text += `[ESCALAS TÉCNICAS]\n- Braden: ${bradenCalc.t > 0 ? bradenCalc.t : '-'} (${bradenCalc.r})\n- Morse: ${morseCalc.t > 0 ? morseCalc.t : '-'} (${morseCalc.r})\n- Fugulin: ${fugulinCalc.t > 0 ? fugulinCalc.t : '-'} (${fugulinCalc.d})\n\n`;
                 
                 let temExame = false;
                 Object.entries(form.exame).forEach(([cat, vals]) => { if(vals.length>0) { text += `- ${cat}: ${vals.join(', ')}\n`; temExame = true; }});
@@ -396,10 +417,15 @@
             return (
                 <div className="flex flex-col lg:flex-row h-full gap-6 animate-fade">
                     <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-                        <div className="bg-slate-800 p-3 border-b border-slate-700 flex gap-2 overflow-x-auto no-scrollbar">
-                            <button onClick={()=>setActiveTab('ADMISSAO')} className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${activeTab==='ADMISSAO'?'bg-blue-600 text-white':'text-slate-400 hover:bg-slate-700'}`}>Admissão</button>
-                            <button onClick={()=>setActiveTab('EVOLUCAO')} className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${activeTab==='EVOLUCAO'?'bg-emerald-600 text-white':'text-slate-400 hover:bg-slate-700'}`}>Evolução (SOIC)</button>
-                            <button onClick={()=>setActiveTab('ALTA')} className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${activeTab==='ALTA'?'bg-red-600 text-white':'text-slate-400 hover:bg-slate-700'}`}>Alta</button>
+                        <div className="bg-slate-800 p-3 border-b border-slate-700 flex justify-between items-center overflow-x-auto no-scrollbar">
+                            <div className="flex gap-2">
+                                <button onClick={()=>setActiveTab('ADMISSAO')} className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${activeTab==='ADMISSAO'?'bg-blue-600 text-white':'text-slate-400 hover:bg-slate-700'}`}>Admissão</button>
+                                <button onClick={()=>setActiveTab('EVOLUCAO')} className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${activeTab==='EVOLUCAO'?'bg-emerald-600 text-white':'text-slate-400 hover:bg-slate-700'}`}>Evolução (SOIC)</button>
+                                <button onClick={()=>setActiveTab('ALTA')} className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${activeTab==='ALTA'?'bg-red-600 text-white':'text-slate-400 hover:bg-slate-700'}`}>Alta</button>
+                            </div>
+                            <button onClick={()=> {if(window.confirm("Limpar dados do prontuário atual?")) setForm(initialSoicState);}} className="px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-colors bg-slate-700 text-slate-300 hover:bg-red-600 hover:text-white flex items-center gap-2">
+                                <Icons.Trash size={14}/> Limpar
+                            </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
                             
@@ -423,7 +449,7 @@
                             {activeTab === 'ALTA' && (
                                 <div className="space-y-6">
                                     <TextAreaField label="Condições de Alta" value={form.alta.condicoes} onChange={v=>setForm({...form, alta:{...form.alta, condicoes:v}})} h="h-32"/>
-                                    <InputField label="Destino (Para onde? / Setor / Casa / Transporte)" value={form.alta.destino} onChange={v=>setForm({...form, alta:{...form.alta, destino:v}})}/>
+                                    <InputField label="Destino da Alta (Casa, Transferência, Óbito)" placeholder="Ex: Casa, CTI, Óbito..." value={form.alta.destino} onChange={v=>setForm({...form, alta:{...form.alta, destino:v}})}/>
                                     <TextAreaField label="Orientações Fornecidas e Prescrições" value={form.alta.orientacoes} onChange={v=>setForm({...form, alta:{...form.alta, orientacoes:v}})} h="h-48"/>
                                 </div>
                             )}
@@ -443,14 +469,14 @@
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer hover:border-blue-500 transition-colors" onClick={()=>setOpenScale(openScale==='braden'?null:'braden')}><div className="flex justify-between items-center"><span className="text-[10px] font-bold uppercase text-blue-400">Braden</span><span className="text-sm font-black text-white">{bradenCalc.t}</span></div></div>
-                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer hover:border-blue-500 transition-colors" onClick={()=>setOpenScale(openScale==='fugulin'?null:'fugulin')}><div className="flex justify-between items-center"><span className="text-[10px] font-bold uppercase text-blue-400">Fugulin</span><span className="text-sm font-black text-white">{fugulinCalc.t}</span></div></div>
-                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer hover:border-blue-500 transition-colors" onClick={()=>setOpenScale(openScale==='morse'?null:'morse')}><div className="flex justify-between items-center"><span className="text-[10px] font-bold uppercase text-blue-400">Morse</span><span className="text-sm font-black text-white">{morseCalc.t}</span></div></div>
+                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer hover:border-blue-500 transition-colors" onClick={()=>setOpenScale(openScale==='braden'?null:'braden')}><div className="flex justify-between items-center"><span className="text-[10px] font-bold uppercase text-blue-400">Braden</span><span className="text-sm font-black text-white">{bradenCalc.t > 0 ? bradenCalc.t : '-'}</span></div></div>
+                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer hover:border-blue-500 transition-colors" onClick={()=>setOpenScale(openScale==='fugulin'?null:'fugulin')}><div className="flex justify-between items-center"><span className="text-[10px] font-bold uppercase text-blue-400">Fugulin</span><span className="text-sm font-black text-white">{fugulinCalc.t > 0 ? fugulinCalc.t : '-'}</span></div></div>
+                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer hover:border-blue-500 transition-colors" onClick={()=>setOpenScale(openScale==='morse'?null:'morse')}><div className="flex justify-between items-center"><span className="text-[10px] font-bold uppercase text-blue-400">Morse</span><span className="text-sm font-black text-white">{morseCalc.t > 0 ? morseCalc.t : '-'}</span></div></div>
                                             </div>
 
-                                            {openScale === 'braden' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">{Object.entries(bradenFull).map(([k,opts])=><ScaleRadio key={k} label={titlesBraden[k]} options={opts} value={form.escalas.braden[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,braden:{...form.escalas.braden,[k]:v}}})}/>)}</div>}
-                                            {openScale === 'fugulin' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">{Object.entries(fugulinFull).map(([k,opts])=><ScaleRadio key={k} label={titlesFugulin[k]} options={opts} value={form.escalas.fugulin[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,fugulin:{...form.escalas.fugulin,[k]:v}}})}/>)}</div>}
-                                            {openScale === 'morse' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700"><ScaleRadio label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <ScaleRadio label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <ScaleRadio label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <ScaleRadio label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <ScaleRadio label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <ScaleRadio label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
+                                            {openScale === 'braden' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={form.escalas.braden[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,braden:{...form.escalas.braden,[k]:v}}})}/>)}</div>}
+                                            {openScale === 'fugulin' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={form.escalas.fugulin[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,fugulin:{...form.escalas.fugulin,[k]:v}}})}/>)}</div>}
+                                            {openScale === 'morse' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700"><CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
                                             
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Exame Físico Rápido</div>
