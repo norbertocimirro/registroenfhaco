@@ -72,9 +72,11 @@
             Cloud: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
             Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
             ChevronDown: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>,
+            ChevronUp: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>,
             Activity: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-            Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
-            Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+            Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
+            ClipboardCopy: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+            Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
         };
 
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
@@ -162,7 +164,140 @@
         };
 
         // =====================================================================
-        // MÓDULO INTOCÁVEL: ASSISTENTE SOIC CLÍNICO E ESCALAS
+        // MÓDULO NOVO (V33): CALCULADORA RÁPIDA DE ESCALAS (TOTALMENTE ISOLADO)
+        // =====================================================================
+        const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
+        const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", lo: "Locomoção", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminações", te: "Terapêutica" };
+
+        const bradenFull = { p: ["1. Total limitado", "2. Muito limitado", "3. Levemente limitado", "4. Sem limitação"], u: ["1. Constantemente úmida", "2. Muito úmida", "3. Ocasionalmente úmida", "4. Raramente úmida"], a: ["1. Acamado", "2. Em cadeira", "3. Deambula ocasionalmente", "4. Deambula frequentemente"], m: ["1. Total imóvel", "2. Muito limitada", "3. Levemente limitada", "4. Sem limitações"], n: ["1. Muito pobre", "2. Inadequada", "3. Adequada", "4. Excelente"], f: ["1. Problema", "2. Problema potencial", "3. Nenhum problema"] };
+        const fugulinFull = { em: ["Lúcido(1)", "Desorientado(2)", "Confuso(3)", "Comatoso(4)"], ox: ["Ar ambiente(1)", "O2 Interm.(2)", "O2 Contínuo(3)", "Vent.Mec(4)"], sv: ["Rotina(1)", "Intervalo 4h(2)", "Intervalo 2h(3)", "Monitor<1h(4)"], mo: ["Ativo(1)", "Limitação(2)", "Grande limitação(3)", "Imóvel(4)"], lo: ["Deambula(1)", "Cadeira(2)", "Sentar aux.(3)", "Restrito leito(4)"], al: ["Indep.(1)", "Auxílio(2)", "SNE/GTT(3)", "NPT(4)"], cc: ["Independente(1)", "Aux.banho(2)", "Higiene leito(3)", "Higiene complexa(4)"], el: ["Independente(1)", "Auxílio(2)", "Incontinência(3)", "Diálise(4)"], te: ["Oral(1)", "EV<24h(2)", "EV>24h(3)", "Vasoativos(4)"] };
+        const morseFull = { h: ["Não(0)", "Sim(25)"], d: ["Não(0)", "Sim(15)"], a: ["Nenhum(0)", "Auxílio(15)", "Móveis(30)"], t: ["Não(0)", "Sim(20)"], m: ["Normal(0)", "Fraca(10)", "Comprometida(20)"], e: ["Orientado(0)", "Esquece limites(15)"] };
+
+        const CalcScaleRadio = ({ label, options, values, value, onChange, color='blue' }) => {
+            const colorStyles = {
+                blue: 'bg-blue-600 border-blue-500 text-white',
+                emerald: 'bg-emerald-600 border-emerald-500 text-white',
+                purple: 'bg-purple-600 border-purple-500 text-white'
+            };
+            const titleColors = {
+                blue: 'text-blue-400',
+                emerald: 'text-emerald-400',
+                purple: 'text-purple-400'
+            };
+            return (
+                <div className="space-y-2 mb-4">
+                    <div className={`text-[11px] font-black uppercase tracking-widest ${titleColors[color]}`}>{label}</div>
+                    <div className="flex flex-col gap-2">
+                        {options.map((opt, idx) => {
+                            const val = values ? values[idx] : idx + 1;
+                            const active = value === val;
+                            return (
+                                <button key={idx} onClick={() => onChange(val)} className={`text-left px-4 py-3 rounded-xl text-xs md:text-sm font-semibold transition-all border ${active ? colorStyles[color] : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-700/50'}`}>
+                                    {opt}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const CalculadorasApp = () => {
+            const initialState = {
+                braden: { p:4, u:4, a:4, m:4, n:4, f:3 },
+                morse: { h:0, d:0, a:0, t:0, m:0, e:0 },
+                fugulin: { em:1, ox:1, sv:1, mo:1, lo:1, al:1, cc:1, el:1, te:1 }
+            };
+            const [escalas, setEscalas] = useState(initialState);
+
+            const bradenCalc = useMemo(() => { const b=escalas.braden; const t=b.p+b.u+b.a+b.m+b.n+b.f; return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; }, [escalas.braden]);
+            const morseCalc = useMemo(() => { const m=escalas.morse; const t=m.h+m.d+m.a+m.t+m.m+m.e; return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; }, [escalas.morse]);
+            const fugulinCalc = useMemo(() => { const t=Object.values(escalas.fugulin).reduce((a,b)=>a+b,0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; }, [escalas.fugulin]);
+
+            const reset = () => {
+                if(window.confirm("Limpar todos os dados das escalas?")) {
+                    setEscalas(initialState);
+                }
+            };
+
+            return (
+                <div className="max-w-5xl mx-auto w-full animate-fade flex flex-col pb-12 px-4 sm:px-6">
+                    <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl"><Icons.Calculator size={28} className="text-amber-500"/></div>
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Calculadora de Escalas</h1>
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido (Sem Vínculo com Prontuário)</p>
+                            </div>
+                        </div>
+                        <button onClick={reset} className="w-full md:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <Icons.Trash size={18}/> Limpar Dados
+                        </button>
+                    </header>
+                    
+                    <div className="space-y-8">
+                        {/* Braden */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
+                            <div className="flex flex-col lg:flex-row justify-between lg:items-center bg-slate-950 p-4 md:p-6 rounded-2xl mb-8 border border-slate-800 gap-4">
+                                <h2 className="text-xl md:text-2xl font-black uppercase text-blue-500">Escala de Braden</h2>
+                                <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-6 py-4 lg:min-w-[250px] justify-center gap-4 shadow-inner">
+                                    <div className="text-4xl md:text-5xl font-black text-white">{bradenCalc.t}</div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pontos</span>
+                                        <span className="text-sm md:text-base font-black text-blue-400 uppercase tracking-wider">{bradenCalc.r}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={escalas.braden[k]} onChange={v=>setEscalas({...escalas,braden:{...escalas.braden,[k]:v}})}/>)}
+                            </div>
+                        </div>
+
+                        {/* Fugulin */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
+                            <div className="flex flex-col lg:flex-row justify-between lg:items-center bg-slate-950 p-4 md:p-6 rounded-2xl mb-8 border border-slate-800 gap-4">
+                                <h2 className="text-xl md:text-2xl font-black uppercase text-emerald-500">Escala de Fugulin</h2>
+                                <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-6 py-4 lg:min-w-[250px] justify-center gap-4 shadow-inner">
+                                    <div className="text-4xl md:text-5xl font-black text-white">{fugulinCalc.t}</div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pontos</span>
+                                        <span className="text-sm md:text-base font-black text-emerald-400 uppercase tracking-wider">{fugulinCalc.d}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}
+                            </div>
+                        </div>
+
+                        {/* Morse */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
+                            <div className="flex flex-col lg:flex-row justify-between lg:items-center bg-slate-950 p-4 md:p-6 rounded-2xl mb-8 border border-slate-800 gap-4">
+                                <h2 className="text-xl md:text-2xl font-black uppercase text-purple-500">Escala de Morse</h2>
+                                <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-6 py-4 lg:min-w-[250px] justify-center gap-4 shadow-inner">
+                                    <div className="text-4xl md:text-5xl font-black text-white">{morseCalc.t}</div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Pontos</span>
+                                        <span className="text-sm md:text-base font-black text-purple-400 uppercase tracking-wider">{morseCalc.r}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={escalas.morse.h} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,h:v}})}/> 
+                                <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={escalas.morse.d} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,d:v}})}/> 
+                                <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={escalas.morse.a} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,a:v}})}/> 
+                                <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={escalas.morse.t} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,t:v}})}/> 
+                                <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={escalas.morse.m} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,m:v}})}/> 
+                                <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={escalas.morse.e} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,e:v}})}/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // =====================================================================
+        // MÓDULO INTOCÁVEL: ASSISTENTE SOIC CLÍNICO (NANDA EXPANDIDO)
         // =====================================================================
         const nandaIntegral = [
             { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento propenso a risco", "Síndrome do idoso frágil"] },
@@ -179,13 +314,6 @@
             { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Conforto prejudicado", "Náusea", "Isolamento social"] },
             { d: 13, name: "Cresc. e Desenvolv.", diagnoses: ["Atraso no desenvolvimento corporal", "Risco de crescimento desproporcional"] }
         ];
-
-        const bradenFull = { p: ["1. Total limitado", "2. Muito limitado", "3. Levemente limitado", "4. Sem limitação"], u: ["1. Constantemente úmida", "2. Muito úmida", "3. Ocasionalmente úmida", "4. Raramente úmida"], a: ["1. Acamado", "2. Em cadeira", "3. Deambula ocasionalmente", "4. Deambula frequentemente"], m: ["1. Total imóvel", "2. Muito limitada", "3. Levemente limitada", "4. Sem limitações"], n: ["1. Muito pobre", "2. Inadequada", "3. Adequada", "4. Excelente"], f: ["1. Problema", "2. Problema potencial", "3. Nenhum problema"] };
-        const fugulinFull = { em: ["Lúcido(1)", "Desorientado(2)", "Confuso(3)", "Comatoso(4)"], ox: ["Ar ambiente(1)", "O2 Interm.(2)", "O2 Contínuo(3)", "Vent.Mec(4)"], sv: ["Rotina(1)", "Intervalo 4h(2)", "Intervalo 2h(3)", "Monitor<1h(4)"], mo: ["Ativo(1)", "Limitação(2)", "Grande limitação(3)", "Imóvel(4)"], lo: ["Deambula(1)", "Cadeira(2)", "Sentar aux.(3)", "Restrito leito(4)"], al: ["Indep.(1)", "Auxílio(2)", "SNE/GTT(3)", "NPT(4)"], cc: ["Independente(1)", "Aux.banho(2)", "Higiene leito(3)", "Higiene complexa(4)"], el: ["Independente(1)", "Auxílio(2)", "Incontinência(3)", "Diálise(4)"], te: ["Oral(1)", "EV<24h(2)", "EV>24h(3)", "Vasoativos(4)"] };
-        const morseFull = { h: ["Não(0)", "Sim(25)"], d: ["Não(0)", "Sim(15)"], a: ["Nenhum(0)", "Auxílio(15)", "Móveis(30)"], t: ["Não(0)", "Sim(20)"], m: ["Normal(0)", "Fraca(10)", "Comprometida(20)"], e: ["Orientado(0)", "Esquece limites(15)"] };
-
-        const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
-        const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", lo: "Locomoção", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminações", te: "Terapêutica" };
 
         const InputField = ({ label, value, onChange }) => (
             <div className="w-full mb-3">
@@ -212,94 +340,6 @@
                 </div>
             </div>
         );
-
-        // =====================================================================
-        // NOVO MÓDULO ISOLADO: CALCULADORA RÁPIDA DE ESCALAS
-        // =====================================================================
-        const CalculadorasApp = () => {
-            const initialState = {
-                braden: { p:4, u:4, a:4, m:4, n:4, f:3 },
-                morse: { h:0, d:0, a:0, t:0, m:0, e:0 },
-                fugulin: { em:1, ox:1, sv:1, mo:1, lo:1, al:1, cc:1, el:1, te:1 }
-            };
-            const [escalas, setEscalas] = useState(initialState);
-
-            const bradenCalc = useMemo(() => { const b=escalas.braden; const t=b.p+b.u+b.a+b.m+b.n+b.f; return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; }, [escalas.braden]);
-            const morseCalc = useMemo(() => { const m=escalas.morse; const t=m.h+m.d+m.a+m.t+m.m+m.e; return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; }, [escalas.morse]);
-            const fugulinCalc = useMemo(() => { const t=Object.values(escalas.fugulin).reduce((a,b)=>a+b,0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; }, [escalas.fugulin]);
-
-            const reset = () => {
-                if(window.confirm("Limpar todos os dados das escalas?")) {
-                    setEscalas(initialState);
-                }
-            };
-
-            return (
-                <div className="h-full max-w-[1200px] mx-auto animate-fade flex flex-col">
-                    <header className="flex items-center justify-between gap-4 mb-6 shrink-0 bg-slate-900 border-b border-slate-800 pb-4">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl"><Icons.Calculator size={24} className="text-amber-500"/></div>
-                            <div>
-                                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Calculadora de Escalas</h1>
-                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido (Sem Vínculo com Prontuário)</p>
-                            </div>
-                        </div>
-                        <button onClick={reset} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-white transition-colors flex items-center gap-2">
-                            <Icons.Trash size={16}/> <span className="hidden sm:block">Limpar Dados</span>
-                        </button>
-                    </header>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pb-20 px-1">
-                        
-                        {/* Braden */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                                <h2 className="text-lg font-black uppercase text-blue-500">Escala de Braden</h2>
-                                <div className="text-right">
-                                    <div className="text-3xl font-black text-white">{bradenCalc.t} Pts</div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{bradenCalc.r}</div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                                {Object.entries(bradenFull).map(([k,opts])=><ScaleRadio key={k} label={titlesBraden[k]} options={opts} value={escalas.braden[k]} onChange={v=>setEscalas({...escalas,braden:{...escalas.braden,[k]:v}})}/>)}
-                            </div>
-                        </div>
-
-                        {/* Fugulin */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                                <h2 className="text-lg font-black uppercase text-emerald-500">Escala de Fugulin</h2>
-                                <div className="text-right">
-                                    <div className="text-3xl font-black text-white">{fugulinCalc.t} Pts</div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{fugulinCalc.d}</div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                                {Object.entries(fugulinFull).map(([k,opts])=><ScaleRadio key={k} label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}
-                            </div>
-                        </div>
-
-                        {/* Morse */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                                <h2 className="text-lg font-black uppercase text-purple-500">Escala de Morse</h2>
-                                <div className="text-right">
-                                    <div className="text-3xl font-black text-white">{morseCalc.t} Pts</div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{morseCalc.r}</div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                                <ScaleRadio label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={escalas.morse.h} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,h:v}})}/> 
-                                <ScaleRadio label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={escalas.morse.d} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,d:v}})}/> 
-                                <ScaleRadio label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={escalas.morse.a} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,a:v}})}/> 
-                                <ScaleRadio label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={escalas.morse.t} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,t:v}})}/> 
-                                <ScaleRadio label="Marcha" options={morseFull.m} values={[0,10,20]} value={escalas.morse.m} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,m:v}})}/> 
-                                <ScaleRadio label="Estado Mental" options={morseFull.e} values={[0,15]} value={escalas.morse.e} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,e:v}})}/>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
 
         const SoicApp = () => {
             const [activeTab, setActiveTab] = useState('EVOLUCAO');
