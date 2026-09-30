@@ -317,7 +317,7 @@
                 subjetivo: '', sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
                 exame: {}, vasculares: [], viasAereas: [], sondasDrenos: [], diagnosticos: [],
                 interpretacao: '', condutas: [], obs: '',
-                elims: { vesical: {via:'', aspecto:'', volume:''}, intestinal: {via:'', aspecto:'', freq:''} },
+                elims: { vesical: {via:'', aspecto:'', volume:'', ml:''}, intestinal: {via:'', aspecto:'', freq:''} },
                 escalas: { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } },
                 alta: { condicoes: '', destino: '', orientacoes: '' }
             };
@@ -338,6 +338,32 @@
                 const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
             }, [form.escalas.fugulin]);
 
+            const toggleElim = (tipo, campo, val) => {
+                setForm(prev => ({
+                    ...prev,
+                    elims: {
+                        ...prev.elims,
+                        [tipo]: {
+                            ...prev.elims[tipo],
+                            [campo]: prev.elims[tipo][campo] === val ? '' : val
+                        }
+                    }
+                }));
+            };
+
+            const ElimButtonGroup = ({ label, options, tipo, campo }) => (
+                <div className="mb-3">
+                    <div className="text-[9px] text-slate-500 uppercase font-bold mb-1.5">{label}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                        {options.map(o => (
+                            <button key={o} onClick={() => toggleElim(tipo, campo, o)} className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${form.elims[tipo][campo] === o ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                {o}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+
             const generateText = () => {
                 if (activeTab === 'ADMISSAO') return `ADMISSÃO ENFERMAGEM - HACO\n----------------------------------\n[HISTÓRICO]\nProcedência: ${form.adm.procedencia||'--'}\nAcompanhante: ${form.adm.acompanhante||'--'}\nQueixa Principal: ${form.adm.queixa||'--'}\nHPP e Alergias: ${form.adm.hpp||'--'}\n\n[SINAIS VITAIS ENTRADA]\nPA: ${form.sv.pa||'-'} | FC: ${form.sv.fc||'-'} | FR: ${form.sv.fr||'-'}\nT: ${form.sv.temp||'-'} | Sat: ${form.sv.spo2||'-'}% | HGT: ${form.sv.hgt||'-'}\nDor (EVA): ${form.sv.eva||'-'}\n----------------------------------\n[Resolução 736/2024 - GT SAE HACO]`;
                 if (activeTab === 'ALTA') return `ALTA DE ENFERMAGEM - HACO\n----------------------------------\n- Condições de Alta: ${form.alta.condicoes||'--'}\n- Destino da Alta: ${form.alta.destino||'--'}\n- Orientações Fornecidas: ${form.alta.orientacoes||'--'}\n----------------------------------\nPaciente ciente.`;
@@ -350,10 +376,17 @@
                 Object.entries(form.exame).forEach(([cat, vals]) => { if(vals.length>0) { text += `- ${cat}: ${vals.join(', ')}\n`; temExame = true; }});
                 if(temExame) text += '\n';
 
-                if (form.elims.vesical.via || form.elims.intestinal.via) {
+                const hasVesical = form.elims.vesical.via || form.elims.vesical.aspecto || form.elims.vesical.volume || form.elims.vesical.ml;
+                const hasIntestinal = form.elims.intestinal.via || form.elims.intestinal.aspecto || form.elims.intestinal.freq;
+
+                if (hasVesical || hasIntestinal) {
                     text += `[ELIMINAÇÕES FISIOLÓGICAS]\n`;
-                    if (form.elims.vesical.via) text += `- Vesical: ${form.elims.vesical.via} | Aspecto: ${form.elims.vesical.aspecto} | Volume: ${form.elims.vesical.volume}\n`;
-                    if (form.elims.intestinal.via) text += `- Intestinal: ${form.elims.intestinal.via} | Aspecto: ${form.elims.intestinal.aspecto} | Freq: ${form.elims.intestinal.freq}\n`;
+                    if (hasVesical) {
+                        text += `- Vesical: ${form.elims.vesical.via||'N/I'} | Aspecto: ${form.elims.vesical.aspecto||'N/I'} | Vol: ${form.elims.vesical.volume||'N/I'} ${form.elims.vesical.ml ? '('+form.elims.vesical.ml+')' : ''}\n`;
+                    }
+                    if (hasIntestinal) {
+                        text += `- Intestinal: ${form.elims.intestinal.via||'N/I'} | Aspecto: ${form.elims.intestinal.aspecto||'N/I'} | Freq: ${form.elims.intestinal.freq||'N/I'}\n`;
+                    }
                     text += `\n`;
                 }
 
@@ -413,7 +446,7 @@
                             {activeTab === 'ALTA' && (
                                 <div className="space-y-6">
                                     <TextAreaField label="Condições de Alta" value={form.alta.condicoes} onChange={v=>setForm({...form, alta:{...form.alta, condicoes:v}})} h="h-32"/>
-                                    <InputField label="Destino (Casa, Transferência, Óbito)" placeholder="Ex: Casa, UTI, CTI..." value={form.alta.destino} onChange={v=>setForm({...form, alta:{...form.alta, destino:v}})}/>
+                                    <InputField label="Destino da Alta (Casa, Transferência, Óbito)" placeholder="Ex: Casa, UTI, CTI..." value={form.alta.destino} onChange={v=>setForm({...form, alta:{...form.alta, destino:v}})}/>
                                     <TextAreaField label="Orientações Fornecidas e Prescrições" value={form.alta.orientacoes} onChange={v=>setForm({...form, alta:{...form.alta, orientacoes:v}})} h="h-48"/>
                                 </div>
                             )}
@@ -451,20 +484,20 @@
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Eliminações Fisiológicas</div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
-                                                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-3">Vesical</h4>
-                                                        <div className="space-y-2">
-                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Via (Ex: Espontânea, SVD, SVA)" value={form.elims.vesical.via} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, via: e.target.value}}})} />
-                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Aspecto (Ex: Citrina, Colúrica, Hematúrica)" value={form.elims.vesical.aspecto} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, aspecto: e.target.value}}})} />
-                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Volume/Débito (ml)" value={form.elims.vesical.volume} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, volume: e.target.value}}})} />
+                                                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-3 border-b border-slate-800 pb-2">Vesical</h4>
+                                                        <ElimButtonGroup label="Via de Eliminação" tipo="vesical" campo="via" options={['Espontânea', 'Fralda', 'SVD', 'SVA', 'Urostomia']} />
+                                                        <ElimButtonGroup label="Aspecto" tipo="vesical" campo="aspecto" options={['Claro/Límpido', 'Concentrado', 'Colúrico', 'Hematúrico', 'Piúrico']} />
+                                                        <ElimButtonGroup label="Volume/Débito" tipo="vesical" campo="volume" options={['Presente (Normal)', 'Anúria', 'Oligúria', 'Poliúria']} />
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <input className="w-24 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 text-center" placeholder="Ex: 500ml" value={form.elims.vesical.ml} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, ml: e.target.value}}})} />
+                                                            <span className="text-[10px] text-slate-500 font-bold uppercase">Volume Exato (Opcional)</span>
                                                         </div>
                                                     </div>
                                                     <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
-                                                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-3">Intestinal</h4>
-                                                        <div className="space-y-2">
-                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Via (Ex: Espontânea, Ostomia)" value={form.elims.intestinal.via} onChange={e=>setForm({...form, elims:{...form.elims, intestinal:{...form.elims.intestinal, via: e.target.value}}})} />
-                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Aspecto (Ex: Pastosa, Melena, Líquida)" value={form.elims.intestinal.aspecto} onChange={e=>setForm({...form, elims:{...form.elims, intestinal:{...form.elims.intestinal, aspecto: e.target.value}}})} />
-                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Frequência (Ex: 1x ao dia, Ausente há 2 dias)" value={form.elims.intestinal.freq} onChange={e=>setForm({...form, elims:{...form.elims, intestinal:{...form.elims.intestinal, freq: e.target.value}}})} />
-                                                        </div>
+                                                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-3 border-b border-slate-800 pb-2">Intestinal</h4>
+                                                        <ElimButtonGroup label="Via de Eliminação" tipo="intestinal" campo="via" options={['Espontânea', 'Fralda', 'Ostomia']} />
+                                                        <ElimButtonGroup label="Aspecto" tipo="intestinal" campo="aspecto" options={['Sólida/Normal', 'Pastosa', 'Líquida/Diarreia', 'Melena', 'Acolia', 'Enterorragia']} />
+                                                        <ElimButtonGroup label="Frequência" tipo="intestinal" campo="freq" options={['Presente (Hoje)', 'Ausente (1 dia)', 'Ausente (2 dias)', 'Ausente (3+ dias)']} />
                                                     </div>
                                                 </div>
                                             </div>
