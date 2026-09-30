@@ -75,9 +75,12 @@
             Cloud: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
             Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
             ChevronDown: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>,
+            ChevronUp: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>,
             Activity: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+            Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
+            ClipboardCopy: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
             Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
-            Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+            Lock: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         };
 
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
@@ -165,7 +168,7 @@
         };
 
         // =====================================================================
-        // MÓDULO NOVO (V34): CALCULADORA RÁPIDA DE ESCALAS (TOTALMENTE ISOLADA)
+        // MÓDULO CALCULADORAS
         // =====================================================================
         const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
         const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", lo: "Locomoção", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminações", te: "Terapêutica" };
@@ -175,16 +178,8 @@
         const morseFull = { h: ["Não(0)", "Sim(25)"], d: ["Não(0)", "Sim(15)"], a: ["Nenhum(0)", "Auxílio(15)", "Móveis(30)"], t: ["Não(0)", "Sim(20)"], m: ["Normal(0)", "Fraca(10)", "Comprometida(20)"], e: ["Orientado(0)", "Esquece limites(15)"] };
 
         const CalcScaleRadio = ({ label, options, values, value, onChange, color='blue' }) => {
-            const colorStyles = {
-                blue: 'bg-blue-600 border-blue-500 text-white',
-                emerald: 'bg-emerald-600 border-emerald-500 text-white',
-                purple: 'bg-purple-600 border-purple-500 text-white'
-            };
-            const titleColors = {
-                blue: 'text-blue-400',
-                emerald: 'text-emerald-400',
-                purple: 'text-purple-400'
-            };
+            const colorStyles = { blue: 'bg-blue-600 border-blue-500 text-white', emerald: 'bg-emerald-600 border-emerald-500 text-white', purple: 'bg-purple-600 border-purple-500 text-white' };
+            const titleColors = { blue: 'text-blue-400', emerald: 'text-emerald-400', purple: 'text-purple-400' };
             return (
                 <div className="space-y-2 mb-4">
                     <div className={`text-[11px] font-black uppercase tracking-widest ${titleColors[color]}`}>{label}</div>
@@ -204,40 +199,25 @@
         };
 
         const CalculadorasApp = () => {
-            const initialState = {
-                braden: { p:null, u:null, a:null, m:null, n:null, f:null },
-                morse: { h:null, d:null, a:null, t:null, m:null, e:null },
-                fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null }
-            };
+            const initialState = { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } };
             const [escalas, setEscalas] = useState(initialState);
 
             const bradenCalc = useMemo(() => { 
-                const b=escalas.braden; 
-                if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
-                const t=(b.p||0)+(b.u||0)+(b.a||0)+(b.m||0)+(b.n||0)+(b.f||0); 
-                return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; 
+                const b=escalas.braden; if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
+                const t=(b.p||0)+(b.u||0)+(b.a||0)+(b.m||0)+(b.n||0)+(b.f||0); return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; 
             }, [escalas.braden]);
 
             const morseCalc = useMemo(() => { 
-                const m=escalas.morse; 
-                if(m.h===null && m.d===null && m.a===null && m.t===null && m.m===null && m.e===null) return {t: 0, r: "Pendente"};
-                const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); 
-                return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
+                const m=escalas.morse; if(m.h===null && m.d===null && m.a===null && m.t===null && m.m===null && m.e===null) return {t: 0, r: "Pendente"};
+                const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
             }, [escalas.morse]);
 
             const fugulinCalc = useMemo(() => { 
-                const f = escalas.fugulin;
-                const vals = Object.values(f);
-                if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
-                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); 
-                return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
+                const f = escalas.fugulin; const vals = Object.values(f); if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
+                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
             }, [escalas.fugulin]);
 
-            const reset = () => {
-                if(window.confirm("Limpar todos os dados das escalas?")) {
-                    setEscalas(initialState);
-                }
-            };
+            const reset = () => { if(window.confirm("Limpar todos os dados das escalas?")) setEscalas(initialState); };
 
             return (
                 <div className="max-w-5xl mx-auto w-full animate-fade flex flex-col pb-12 px-4 sm:px-6">
@@ -246,7 +226,7 @@
                             <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl"><Icons.Calculator size={28} className="text-amber-500"/></div>
                             <div>
                                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Calculadora de Escalas</h1>
-                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido (Sem Vínculo com Prontuário)</p>
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido Clínico</p>
                             </div>
                         </div>
                         <button onClick={reset} className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-3 shadow-sm">
@@ -255,42 +235,29 @@
                     </header>
                     
                     <div className="space-y-8">
-                        {/* Braden */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
                             <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
                                 <h2 className="text-sm font-black uppercase tracking-widest text-blue-500 mb-2">Escala de Braden</h2>
                                 <div className="text-6xl font-black text-white mb-2">{bradenCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${bradenCalc.t > 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                                    {bradenCalc.r}
-                                </div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${bradenCalc.t > 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{bradenCalc.r}</div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={escalas.braden[k]} onChange={v=>setEscalas({...escalas,braden:{...escalas.braden,[k]:v}})}/>)}
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={escalas.braden[k]} onChange={v=>setEscalas({...escalas,braden:{...escalas.braden,[k]:v}})}/>)}</div>
                         </div>
 
-                        {/* Fugulin */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
                             <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
                                 <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin</h2>
                                 <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                                    {fugulinCalc.d}
-                                </div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{fugulinCalc.d}</div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}</div>
                         </div>
 
-                        {/* Morse */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
                             <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
                                 <h2 className="text-sm font-black uppercase tracking-widest text-purple-500 mb-2">Escala de Morse</h2>
                                 <div className="text-6xl font-black text-white mb-2">{morseCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${morseCalc.t > 0 ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                                    {morseCalc.r}
-                                </div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${morseCalc.t > 0 ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{morseCalc.r}</div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={escalas.morse.h} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,h:v}})}/> 
@@ -307,7 +274,7 @@
         };
 
         // =====================================================================
-        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (NANDA EXPANDIDO V34)
+        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO
         // =====================================================================
         const nandaIntegral = [
             { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento de saúde propenso a risco", "Síndrome do idoso frágil", "Autogestão ineficaz da saúde", "Prontidão para autogestão aprimorada da saúde", "Comportamentos de manutenção doméstica ineficazes"] },
@@ -331,10 +298,10 @@
                 <input className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}/>
             </div>
         );
-        const TextAreaField = ({ label, value, onChange, h="h-32" }) => (
+        const TextAreaField = ({ label, value, onChange, h="h-32", placeholder='' }) => (
             <div className="w-full mb-3">
                 <div className="text-[10px] font-bold uppercase text-slate-400 mb-1">{label}</div>
-                <textarea className={`w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white focus:border-blue-500 outline-none ${h}`} value={value} onChange={e => onChange(e.target.value)} />
+                <textarea className={`w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white focus:border-blue-500 outline-none ${h}`} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
             </div>
         );
 
@@ -348,37 +315,27 @@
             const initialSoicState = {
                 adm: { procedencia: '', acompanhante: '', queixa: '', hpp: '' },
                 subjetivo: '', sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
-                exame: {}, vasculares: [], viasAereas: [], eliminações: [], diagnosticos: [],
+                exame: {}, vasculares: [], viasAereas: [], sondasDrenos: [], diagnosticos: [],
                 interpretacao: '', condutas: [], obs: '',
-                escalas: { 
-                    braden: { p:null, u:null, a:null, m:null, n:null, f:null }, 
-                    morse: { h:null, d:null, a:null, t:null, m:null, e:null }, 
-                    fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } 
-                },
+                elims: { vesical: {via:'', aspecto:'', volume:''}, intestinal: {via:'', aspecto:'', freq:''} },
+                escalas: { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } },
                 alta: { condicoes: '', destino: '', orientacoes: '' }
             };
             const [form, setForm] = useState(initialSoicState);
 
             const bradenCalc = useMemo(() => { 
-                const b=form.escalas.braden; 
-                if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
-                const t=(b.p||0)+(b.u||0)+(b.a||0)+(b.m||0)+(b.n||0)+(b.f||0); 
-                return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; 
+                const b=form.escalas.braden; if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
+                const t=(b.p||0)+(b.u||0)+(b.a||0)+(b.m||0)+(b.n||0)+(b.f||0); return {t, r: t>=19?"Sem Risco":t>=15?"Baixo":t>=13?"Moderado":t>=10?"Alto":"Muito Elevado"}; 
             }, [form.escalas.braden]);
 
             const morseCalc = useMemo(() => { 
-                const m=form.escalas.morse; 
-                if(m.h===null && m.d===null && m.a===null && m.t===null && m.m===null && m.e===null) return {t: 0, r: "Pendente"};
-                const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); 
-                return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
+                const m=form.escalas.morse; if(m.h===null && m.d===null && m.a===null && m.t===null && m.m===null && m.e===null) return {t: 0, r: "Pendente"};
+                const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
             }, [form.escalas.morse]);
 
             const fugulinCalc = useMemo(() => { 
-                const f = form.escalas.fugulin;
-                const vals = Object.values(f);
-                if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
-                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); 
-                return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
+                const f = form.escalas.fugulin; const vals = Object.values(f); if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
+                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
             }, [form.escalas.fugulin]);
 
             const generateText = () => {
@@ -393,11 +350,18 @@
                 Object.entries(form.exame).forEach(([cat, vals]) => { if(vals.length>0) { text += `- ${cat}: ${vals.join(', ')}\n`; temExame = true; }});
                 if(temExame) text += '\n';
 
-                if (form.vasculares.length > 0 || form.viasAereas.length > 0 || form.eliminações.length > 0) {
-                    text += `[INVASIVOS E ELIMINAÇÕES]\n`;
+                if (form.elims.vesical.via || form.elims.intestinal.via) {
+                    text += `[ELIMINAÇÕES FISIOLÓGICAS]\n`;
+                    if (form.elims.vesical.via) text += `- Vesical: ${form.elims.vesical.via} | Aspecto: ${form.elims.vesical.aspecto} | Volume: ${form.elims.vesical.volume}\n`;
+                    if (form.elims.intestinal.via) text += `- Intestinal: ${form.elims.intestinal.via} | Aspecto: ${form.elims.intestinal.aspecto} | Freq: ${form.elims.intestinal.freq}\n`;
+                    text += `\n`;
+                }
+
+                if (form.vasculares.length > 0 || form.viasAereas.length > 0 || form.sondasDrenos.length > 0) {
+                    text += `[INVASIVOS E DRENOS]\n`;
                     form.vasculares.forEach(v => text += `- Acesso: ${v.tipo} em ${v.sitio} (${v.obs})\n`);
                     form.viasAereas.forEach(va => text += `- Via Aérea: ${va.tipo} (Fixação: ${va.fixacao}cm)\n`);
-                    form.eliminações.forEach(e => text += `- Sonda/Dreno: ${e.tipo} | Asp: ${e.aspecto} | Débito: ${e.debito}ml\n`);
+                    form.sondasDrenos.forEach(e => text += `- Dreno/Sonda: ${e.tipo} | Asp: ${e.aspecto} | Débito: ${e.debito}ml\n`);
                     text += '\n';
                 }
 
@@ -449,7 +413,7 @@
                             {activeTab === 'ALTA' && (
                                 <div className="space-y-6">
                                     <TextAreaField label="Condições de Alta" value={form.alta.condicoes} onChange={v=>setForm({...form, alta:{...form.alta, condicoes:v}})} h="h-32"/>
-                                    <InputField label="Destino da Alta (Casa, Transferência, Óbito)" placeholder="Ex: Casa, CTI, Óbito..." value={form.alta.destino} onChange={v=>setForm({...form, alta:{...form.alta, destino:v}})}/>
+                                    <InputField label="Destino (Casa, Transferência, Óbito)" placeholder="Ex: Casa, UTI, CTI..." value={form.alta.destino} onChange={v=>setForm({...form, alta:{...form.alta, destino:v}})}/>
                                     <TextAreaField label="Orientações Fornecidas e Prescrições" value={form.alta.orientacoes} onChange={v=>setForm({...form, alta:{...form.alta, orientacoes:v}})} h="h-48"/>
                                 </div>
                             )}
@@ -484,17 +448,39 @@
                                             </div>
 
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                                <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Invasivos e Eliminações</div>
+                                                <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Eliminações Fisiológicas</div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                                                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-3">Vesical</h4>
+                                                        <div className="space-y-2">
+                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Via (Ex: Espontânea, SVD, SVA)" value={form.elims.vesical.via} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, via: e.target.value}}})} />
+                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Aspecto (Ex: Citrina, Colúrica, Hematúrica)" value={form.elims.vesical.aspecto} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, aspecto: e.target.value}}})} />
+                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Volume/Débito (ml)" value={form.elims.vesical.volume} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, volume: e.target.value}}})} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                                                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-3">Intestinal</h4>
+                                                        <div className="space-y-2">
+                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Via (Ex: Espontânea, Ostomia)" value={form.elims.intestinal.via} onChange={e=>setForm({...form, elims:{...form.elims, intestinal:{...form.elims.intestinal, via: e.target.value}}})} />
+                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Aspecto (Ex: Pastosa, Melena, Líquida)" value={form.elims.intestinal.aspecto} onChange={e=>setForm({...form, elims:{...form.elims, intestinal:{...form.elims.intestinal, aspecto: e.target.value}}})} />
+                                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Frequência (Ex: 1x ao dia, Ausente há 2 dias)" value={form.elims.intestinal.freq} onChange={e=>setForm({...form, elims:{...form.elims, intestinal:{...form.elims.intestinal, freq: e.target.value}}})} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                                                <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Invasivos, Sondas e Drenos</div>
                                                 <div className="flex flex-wrap gap-2 mb-6">
                                                     <button onClick={()=>setForm({...form, vasculares:[...form.vasculares,{id:Date.now(),tipo:'AVP',sitio:'',obs:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Acesso Vascular</button>
                                                     <button onClick={()=>setForm({...form, viasAereas:[...form.viasAereas,{id:Date.now(),tipo:'O2 Cateter',fixacao:'',cuff:'',secrecao:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Via Aérea</button>
-                                                    <button onClick={()=>setForm({...form, eliminações:[...form.eliminações,{id:Date.now(),tipo:'SVD',debito:'',aspecto:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Sondas e Drenos</button>
+                                                    <button onClick={()=>setForm({...form, sondasDrenos:[...form.sondasDrenos,{id:Date.now(),tipo:'Dreno de Portovac',debito:'',aspecto:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Outros Drenos/Sondas</button>
                                                 </div>
 
                                                 <div className="space-y-3">
                                                     {form.vasculares.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Acesso (ex: AVP)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.sitio} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,sitio:e.target.value}:x)})} placeholder="Sítio (ex: MSE)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.obs} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,obs:e.target.value}:x)})} placeholder="Obs (Limpo/Pérvio)"/><button onClick={()=>setForm({...form,vasculares:form.vasculares.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
                                                     {form.viasAereas.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Via Aérea"/><input className="w-24 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center" value={v.fixacao} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,fixacao:e.target.value}:x)})} placeholder="Fixação(cm)"/><button onClick={()=>setForm({...form,viasAereas:form.viasAereas.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
-                                                    {form.eliminações.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,eliminações:form.eliminações.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Sonda/Dreno"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.aspecto} onChange={e=>setForm({...form,eliminações:form.eliminações.map(x=>x.id===v.id?{...x,aspecto:e.target.value}:x)})} placeholder="Aspecto (ex: Citrino)"/><input className="w-28 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center" value={v.debito} onChange={e=>setForm({...form,eliminações:form.eliminações.map(x=>x.id===v.id?{...x,debito:e.target.value}:x)})} placeholder="Débito(ml)"/><button onClick={()=>setForm({...form,eliminações:form.eliminações.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
+                                                    {form.sondasDrenos.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Sonda/Dreno"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.aspecto} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,aspecto:e.target.value}:x)})} placeholder="Aspecto (ex: Seroso)"/><input className="w-28 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center" value={v.debito} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,debito:e.target.value}:x)})} placeholder="Débito(ml)"/><button onClick={()=>setForm({...form,sondasDrenos:form.sondasDrenos.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
                                                 </div>
                                             </div>
                                         </div>
@@ -516,7 +502,7 @@
                                         <div className="space-y-6">
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-emerald-500 mb-4">Condutas Rápidas</div>
-                                                <div className="flex flex-wrap gap-2 mb-4">{["Monitorar SSVV", "Troca de Decúbito 2/2h", "Controle Glicêmico", "Grades Elevadas", "Precaução de Contato", "Aspiração SOS"].map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-lg':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500'}`}>{c}</button>)}</div>
+                                                <div className="flex flex-wrap gap-2 mb-4">{["Monitorar SSVV", "Troca de Decúbito 2/2h", "Controle Glicêmico", "Grades Elevadas", "Precaução de Contato", "Aspiração SOS", "Balanço Hídrico", "Mudança de Decúbito", "Curativo Estéril"].map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-lg':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500'}`}>{c}</button>)}</div>
                                             </div>
                                             <TextAreaField label="Notas e Cuidados Específicos" h="h-48" value={form.obs} onChange={v=>setForm({...form, obs:v})} />
                                         </div>
@@ -538,11 +524,59 @@
         };
 
         // =====================================================================
+        // TELA DE LOGIN PARA ÁREA DE AUDITORIA
+        // =====================================================================
+        const LoginScreen = ({ onLogin }) => {
+            const [pwd, setPwd] = useState('');
+            const [err, setErr] = useState(false);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if(pwd === 'gtsae2026') {
+                    onLogin();
+                } else {
+                    setErr(true);
+                    setPwd('');
+                }
+            };
+
+            return (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 animate-fade">
+                    <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl w-full max-w-sm flex flex-col items-center">
+                        <div className="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mb-6">
+                            <Icons.Lock size={32} />
+                        </div>
+                        <h2 className="text-xl font-bold text-white mb-2">Acesso Restrito</h2>
+                        <p className="text-xs text-slate-400 text-center mb-6">O painel de auditoria é exclusivo para membros avaliadores da GT SAE HACO.</p>
+                        
+                        <form onSubmit={handleLogin} className="w-full space-y-4">
+                            <div>
+                                <input 
+                                    type="password" 
+                                    placeholder="Senha de Auditor" 
+                                    className={`w-full bg-slate-950 border ${err ? 'border-red-500' : 'border-slate-700'} rounded-xl px-4 py-3 text-center text-white tracking-widest outline-none focus:border-blue-500`}
+                                    value={pwd} 
+                                    onChange={e => {setPwd(e.target.value); setErr(false);}}
+                                    autoFocus
+                                />
+                                {err && <p className="text-red-500 text-[10px] text-center mt-2 font-bold uppercase">Senha Incorreta</p>}
+                            </div>
+                            <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-colors">
+                                Autenticar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // =====================================================================
         // APLICAÇÃO PRINCIPAL GESTÃO E ROTEAMENTO
         // =====================================================================
         const App = () => {
             const [db, setDb] = useState({ internados: {}, records: [] });
             const [isCloud, setIsCloud] = useState(false);
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
 
             const anosDisponiveis = [...new Set(PERIODOS.map(p => p.id.split('-')[0]))];
             const [anoSelecionado, setAnoSelecionado] = useState(anosDisponiveis[0] || '2026');
@@ -600,7 +634,7 @@
                 });
             }, [db.internados, db.records, groupedPeriods]);
 
-            const [view, setView] = useState('DASHBOARD'); 
+            const [view, setView] = useState('SOIC'); 
             const [selectedPeriod, setSelectedPeriod] = useState(null);
             const [selectedRecord, setSelectedRecord] = useState(null);
 
@@ -961,13 +995,22 @@
                 );
             };
 
+            const navTo = (v) => {
+                const auditViews = ['DASHBOARD', 'PERIODO', 'AVALIACAO', 'COMPILADO_PERIODO', 'COMPILADO_ANUAL'];
+                if(auditViews.includes(v) && !isAuthenticated) {
+                    setView('LOGIN');
+                } else {
+                    setView(v);
+                }
+            };
+
             const MobileNav = () => (
                 <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe no-print">
-                    <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.Dashboard /> <span className="text-[8px] font-bold mt-1">Painel</span></button>
-                    <button onClick={() => setView('CALCULADORAS')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'CALCULADORAS' ? 'text-amber-500' : 'text-slate-500 hover:text-white'}`}><Icons.Calculator /> <span className="text-[8px] font-bold mt-1">Escalas</span></button>
-                    {selectedPeriod && <button onClick={() => setView('PERIODO')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.Folder /> <span className="text-[8px] font-bold mt-1">Amostra</span></button>}
-                    {selectedRecord && <button onClick={() => setView('AVALIACAO')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.FileEdit /> <span className="text-[8px] font-bold mt-1">Auditoria</span></button>}
-                    <button onClick={() => setView('SOIC')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'SOIC' ? 'text-emerald-500' : 'text-slate-500 hover:text-white'}`}><Icons.Activity /> <span className="text-[8px] font-bold mt-1">SOIC</span></button>
+                    <button onClick={() => navTo('DASHBOARD')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${['DASHBOARD','COMPILADO_ANUAL','LOGIN'].includes(view) ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.Dashboard /> <span className="text-[8px] font-bold mt-1">Gestão</span></button>
+                    <button onClick={() => navTo('CALCULADORAS')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'CALCULADORAS' ? 'text-amber-500' : 'text-slate-500 hover:text-white'}`}><Icons.Calculator /> <span className="text-[8px] font-bold mt-1">Escalas</span></button>
+                    {selectedPeriod && isAuthenticated && <button onClick={() => navTo('PERIODO')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${['PERIODO','COMPILADO_PERIODO'].includes(view) ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.Folder /> <span className="text-[8px] font-bold mt-1">Amostra</span></button>}
+                    {selectedRecord && isAuthenticated && <button onClick={() => navTo('AVALIACAO')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.FileEdit /> <span className="text-[8px] font-bold mt-1">Auditoria</span></button>}
+                    <button onClick={() => navTo('SOIC')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'SOIC' ? 'text-emerald-500' : 'text-slate-500 hover:text-white'}`}><Icons.Activity /> <span className="text-[8px] font-bold mt-1">SOIC</span></button>
                 </div>
             );
 
@@ -979,37 +1022,40 @@
                             <span className="ml-3 font-bold text-white tracking-wide">GT SAE HACO</span>
                         </div>
                         <div className="p-4 flex flex-col gap-2 flex-1">
-                            <button onClick={() => setView('DASHBOARD')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'DASHBOARD' || view === 'COMPILADO_ANUAL' ? 'bg-blue-600/10 text-blue-500 border border-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                            <div className="text-[10px] font-black uppercase text-slate-500 mb-2 mt-2 px-3">Gestão de Auditoria</div>
+                            <button onClick={() => navTo('DASHBOARD')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${['DASHBOARD','COMPILADO_ANUAL','LOGIN'].includes(view) ? 'bg-blue-600/10 text-blue-500 border border-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                                 <Icons.Dashboard /> <span className="text-sm font-medium">Dashboard</span>
                             </button>
-                            {selectedPeriod && (
-                                <button onClick={() => setView('PERIODO')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'PERIODO' || view === 'COMPILADO_PERIODO' ? 'bg-blue-600/10 text-blue-500 border border-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                            {selectedPeriod && isAuthenticated && (
+                                <button onClick={() => navTo('PERIODO')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${['PERIODO','COMPILADO_PERIODO'].includes(view) ? 'bg-blue-600/10 text-blue-500 border border-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                                     <Icons.Folder /> <span className="text-sm font-medium">Período Ativo</span>
                                 </button>
                             )}
-                            {selectedRecord && (
-                                <button onClick={() => setView('AVALIACAO')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'AVALIACAO' ? 'bg-blue-600/10 text-blue-500 border border-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                            {selectedRecord && isAuthenticated && (
+                                <button onClick={() => navTo('AVALIACAO')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'AVALIACAO' ? 'bg-blue-600/10 text-blue-500 border border-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                                     <Icons.FileEdit /> <span className="text-sm font-medium">Auditoria Atual</span>
                                 </button>
                             )}
                             
                             <div className="my-2 border-t border-slate-800"></div>
+                            <div className="text-[10px] font-black uppercase text-slate-500 mb-2 mt-2 px-3">Assistência (Público)</div>
                             
-                            <button onClick={() => setView('CALCULADORAS')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'CALCULADORAS' ? 'bg-amber-600/10 text-amber-500 border border-amber-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-amber-400'}`}>
-                                <Icons.Calculator /> <span className="text-sm font-medium">Calculadora de Escalas</span>
-                            </button>
-                            <button onClick={() => setView('SOIC')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'SOIC' ? 'bg-emerald-600/10 text-emerald-500 border border-emerald-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-emerald-400'}`}>
+                            <button onClick={() => navTo('SOIC')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'SOIC' ? 'bg-emerald-600/10 text-emerald-500 border border-emerald-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-emerald-400'}`}>
                                 <Icons.Activity /> <span className="text-sm font-medium">Assistente Clínico SOIC</span>
+                            </button>
+                            <button onClick={() => navTo('CALCULADORAS')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'CALCULADORAS' ? 'bg-amber-600/10 text-amber-500 border border-amber-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-amber-400'}`}>
+                                <Icons.Calculator /> <span className="text-sm font-medium">Calculadora de Escalas</span>
                             </button>
                         </div>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto h-full relative custom-scrollbar bg-slate-950 pb-20 lg:pb-0">
-                        {view === 'DASHBOARD' && renderDashboard()}
-                        {view === 'PERIODO' && renderPeriodo()}
-                        {view === 'AVALIACAO' && renderAvaliacao()}
-                        {view === 'COMPILADO_PERIODO' && renderCompiladoPeriodo()}
-                        {view === 'COMPILADO_ANUAL' && renderCompiladoAnual()}
+                        {view === 'LOGIN' && <LoginScreen onLogin={() => { setIsAuthenticated(true); setView('DASHBOARD'); }} />}
+                        {view === 'DASHBOARD' && isAuthenticated && renderDashboard()}
+                        {view === 'PERIODO' && isAuthenticated && renderPeriodo()}
+                        {view === 'AVALIACAO' && isAuthenticated && renderAvaliacao()}
+                        {view === 'COMPILADO_PERIODO' && isAuthenticated && renderCompiladoPeriodo()}
+                        {view === 'COMPILADO_ANUAL' && isAuthenticated && renderCompiladoAnual()}
                         
                         {/* MÓDULO CALCULADORAS ISOLADAS */}
                         {view === 'CALCULADORAS' && (
