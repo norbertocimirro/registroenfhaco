@@ -75,12 +75,12 @@
             Cloud: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
             Local: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
             ChevronDown: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>,
-            ChevronUp: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>,
             Activity: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
             Calculator: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>,
             ClipboardCopy: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
             Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
-            Lock: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Lock: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            Droplets: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
         };
 
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
@@ -107,7 +107,6 @@
         // MÓDULO INTOCÁVEL: DADOS DE AUDITORIA (BASE DA PLANILHA)
         // =====================================================================
         const AVALIADORES = ["Ten Cimirro", "Ten Bárbara Viegas", "Ten Renata", "Ten Jéssica Cunha", "Ten Zomer", "Sgt Leonarczyk", "Sgt Thamires Queiroz"];
-        
         const PERIODOS = [
             { id: '2026-07', label: '15/07/2026 a 14/08/2026', short: 'Jul/Ago' },
             { id: '2026-08', label: '15/08/2026 a 14/09/2026', short: 'Ago/Set' },
@@ -168,7 +167,7 @@
         };
 
         // =====================================================================
-        // MÓDULO CALCULADORAS
+        // MÓDULO CALCULADORAS (ESCALAS E PERDAS INSENSÍVEIS)
         // =====================================================================
         const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
         const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", lo: "Locomoção", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminações", te: "Terapêutica" };
@@ -178,14 +177,14 @@
         const morseFull = { h: ["Não(0)", "Sim(25)"], d: ["Não(0)", "Sim(15)"], a: ["Nenhum(0)", "Auxílio(15)", "Móveis(30)"], t: ["Não(0)", "Sim(20)"], m: ["Normal(0)", "Fraca(10)", "Comprometida(20)"], e: ["Orientado(0)", "Esquece limites(15)"] };
 
         const CalcScaleRadio = ({ label, options, values, value, onChange, color='blue' }) => {
-            const colorStyles = { blue: 'bg-blue-600 border-blue-500 text-white', emerald: 'bg-emerald-600 border-emerald-500 text-white', purple: 'bg-purple-600 border-purple-500 text-white' };
-            const titleColors = { blue: 'text-blue-400', emerald: 'text-emerald-400', purple: 'text-purple-400' };
+            const colorStyles = { blue: 'bg-blue-600 border-blue-500 text-white', emerald: 'bg-emerald-600 border-emerald-500 text-white', purple: 'bg-purple-600 border-purple-500 text-white', cyan: 'bg-cyan-600 border-cyan-500 text-white' };
+            const titleColors = { blue: 'text-blue-400', emerald: 'text-emerald-400', purple: 'text-purple-400', cyan: 'text-cyan-400' };
             return (
                 <div className="space-y-2 mb-4">
                     <div className={`text-[11px] font-black uppercase tracking-widest ${titleColors[color]}`}>{label}</div>
                     <div className="flex flex-col gap-2">
                         {options.map((opt, idx) => {
-                            const val = values ? values[idx] : idx + 1;
+                            const val = values ? values[idx] : (typeof opt === 'string' ? idx + 1 : opt);
                             const active = value === val;
                             return (
                                 <button key={idx} onClick={() => onChange(val)} className={`text-left px-4 py-3 rounded-xl text-xs md:text-sm font-semibold transition-all border ${active ? colorStyles[color] : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-700/50'}`}>
@@ -199,8 +198,9 @@
         };
 
         const CalculadorasApp = () => {
-            const initialState = { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } };
+            const initialState = { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null }, bh: { peso: '', horas: '', febre: null, taquipneia: null, sudorese: null, ventMech: null } };
             const [escalas, setEscalas] = useState(initialState);
+            const [activeCalc, setActiveCalc] = useState('ESCALAS'); // ESCALAS | BH
 
             const bradenCalc = useMemo(() => { 
                 const b=escalas.braden; if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
@@ -217,58 +217,129 @@
                 const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
             }, [escalas.fugulin]);
 
+            // Cálculo das Perdas Insensíveis
+            const piCalc = useMemo(() => {
+                const peso = parseFloat(escalas.bh.peso);
+                const horas = parseFloat(escalas.bh.horas);
+                if(isNaN(peso) || isNaN(horas) || peso <= 0 || horas <= 0) return { total: 0, base: 0, extras: 0, d: "Aguardando Peso e Tempo" };
+                
+                // Base: 0.5 ml/kg/h
+                let base = 0.5 * peso * horas;
+                let extras = 0;
+
+                // Febre: > 37.5°C (simplificado clínico: +0.1 a +0.2 ml/kg/h por hora)
+                if (escalas.bh.febre === '37.8 - 38.9°C') extras += (0.1 * peso * horas);
+                if (escalas.bh.febre === '≥ 39.0°C') extras += (0.2 * peso * horas);
+
+                // Taquipneia
+                if (escalas.bh.taquipneia === '21 - 30 irpm') extras += (base * 0.20); // +20%
+                if (escalas.bh.taquipneia === '> 30 irpm') extras += (base * 0.40); // +40%
+
+                // Sudorese (Estimativa volumétrica distribuída pelas horas)
+                // Leve: ~300ml/24h -> 12.5 ml/h
+                // Mod: ~600ml/24h -> 25 ml/h
+                // Intensa: ~1000ml/24h -> 41 ml/h
+                if (escalas.bh.sudorese === 'Leve') extras += (12.5 * horas);
+                if (escalas.bh.sudorese === 'Moderada') extras += (25 * horas);
+                if (escalas.bh.sudorese === 'Intensa') extras += (41.6 * horas);
+
+                // Ventilação Mecânica (Umidificada e aquecida reduz a perda respiratória, que é ~1/3 da perda total)
+                let total = base + extras;
+                if (escalas.bh.ventMech === 'Sim (Umidificada)') {
+                    const perdaResp = (total * 0.33);
+                    total = total - perdaResp;
+                }
+
+                return { total: Math.round(total), base: Math.round(base), extras: Math.round(extras), d: "Volume Estimado a Descontar" };
+            }, [escalas.bh]);
+
             const reset = () => { if(window.confirm("Limpar todos os dados das escalas?")) setEscalas(initialState); };
 
             return (
                 <div className="max-w-5xl mx-auto w-full animate-fade flex flex-col pb-12 px-4 sm:px-6">
-                    <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
+                    <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl"><Icons.Calculator size={28} className="text-amber-500"/></div>
                             <div>
-                                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Calculadora de Escalas</h1>
-                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido Clínico</p>
+                                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Cálculos Clínicos</h1>
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido de Enfermagem</p>
                             </div>
                         </div>
                         <button onClick={reset} className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-3 shadow-sm">
                             <Icons.Trash size={18}/> Limpar Dados
                         </button>
                     </header>
-                    
-                    <div className="space-y-8">
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-blue-500 mb-2">Escala de Braden</h2>
-                                <div className="text-6xl font-black text-white mb-2">{bradenCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${bradenCalc.t > 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{bradenCalc.r}</div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={escalas.braden[k]} onChange={v=>setEscalas({...escalas,braden:{...escalas.braden,[k]:v}})}/>)}</div>
-                        </div>
 
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin</h2>
-                                <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{fugulinCalc.d}</div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}</div>
-                        </div>
-
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
-                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-purple-500 mb-2">Escala de Morse</h2>
-                                <div className="text-6xl font-black text-white mb-2">{morseCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${morseCalc.t > 0 ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{morseCalc.r}</div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={escalas.morse.h} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,h:v}})}/> 
-                                <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={escalas.morse.d} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,d:v}})}/> 
-                                <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={escalas.morse.a} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,a:v}})}/> 
-                                <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={escalas.morse.t} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,t:v}})}/> 
-                                <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={escalas.morse.m} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,m:v}})}/> 
-                                <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={escalas.morse.e} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,e:v}})}/>
-                            </div>
-                        </div>
+                    <div className="flex gap-2 bg-slate-900 p-2 rounded-2xl border border-slate-800 mb-8">
+                        <button onClick={()=>setActiveCalc('ESCALAS')} className={`flex-1 py-3 rounded-xl text-xs md:text-sm font-black transition-all ${activeCalc==='ESCALAS'?'bg-amber-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}>Escalas (Braden, Morse, Fugulin)</button>
+                        <button onClick={()=>setActiveCalc('BH')} className={`flex-1 py-3 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 ${activeCalc==='BH'?'bg-cyan-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}><Icons.Droplets size={16}/> Perdas Insensíveis</button>
                     </div>
+                    
+                    {activeCalc === 'ESCALAS' && (
+                        <div className="space-y-8 animate-fade">
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
+                                <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-blue-500 mb-2">Escala de Braden</h2>
+                                    <div className="text-6xl font-black text-white mb-2">{bradenCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                    <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${bradenCalc.t > 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{bradenCalc.r}</div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={escalas.braden[k]} onChange={v=>setEscalas({...escalas,braden:{...escalas.braden,[k]:v}})}/>)}</div>
+                            </div>
+
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
+                                <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin</h2>
+                                    <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                    <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{fugulinCalc.d}</div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}</div>
+                            </div>
+
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
+                                <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-purple-500 mb-2">Escala de Morse</h2>
+                                    <div className="text-6xl font-black text-white mb-2">{morseCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                    <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${morseCalc.t > 0 ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{morseCalc.r}</div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={escalas.morse.h} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,h:v}})}/> 
+                                    <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={escalas.morse.d} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,d:v}})}/> 
+                                    <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={escalas.morse.a} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,a:v}})}/> 
+                                    <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={escalas.morse.t} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,t:v}})}/> 
+                                    <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={escalas.morse.m} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,m:v}})}/> 
+                                    <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={escalas.morse.e} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,e:v}})}/>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeCalc === 'BH' && (
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm animate-fade">
+                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                <h2 className="text-sm font-black uppercase tracking-widest text-cyan-500 mb-2">Perdas Insensíveis (Estimativa)</h2>
+                                <div className="text-6xl font-black text-white mb-2">{piCalc.total} <span className="text-xl text-slate-500 font-bold">ml</span></div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${piCalc.total > 0 ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{piCalc.d}</div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                                    <label className="text-xs font-black uppercase text-slate-500 tracking-widest block mb-2">Peso do Paciente (Kg)</label>
+                                    <input type="number" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-2xl font-black text-white focus:border-cyan-500 outline-none text-center" value={escalas.bh.peso} onChange={e => setEscalas({...escalas, bh: {...escalas.bh, peso: e.target.value}})} placeholder="0.0" />
+                                </div>
+                                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                                    <label className="text-xs font-black uppercase text-slate-500 tracking-widest block mb-2">Tempo Fechamento Balanço (Horas)</label>
+                                    <input type="number" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-2xl font-black text-white focus:border-cyan-500 outline-none text-center" value={escalas.bh.horas} onChange={e => setEscalas({...escalas, bh: {...escalas.bh, horas: e.target.value}})} placeholder="Ex: 6, 12, 24" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-x-6 gap-y-2">
+                                <CalcScaleRadio color="cyan" label="Febre (Maior temp do período)" options={['Afebril (Até 37.7°C)', '37.8 - 38.9°C', '≥ 39.0°C']} values={['Afebril', '37.8 - 38.9°C', '≥ 39.0°C']} value={escalas.bh.febre} onChange={v=>setEscalas({...escalas,bh:{...escalas.bh,febre:v}})}/>
+                                <CalcScaleRadio color="cyan" label="Frequência Respiratória (Taquipneia)" options={['Eupnéico (Até 20 irpm)', '21 - 30 irpm', '> 30 irpm']} values={['Eupnéico', '21 - 30 irpm', '> 30 irpm']} value={escalas.bh.taquipneia} onChange={v=>setEscalas({...escalas,bh:{...escalas.bh,taquipneia:v}})}/>
+                                <CalcScaleRadio color="cyan" label="Sudorese Profusa" options={['Ausente', 'Leve', 'Moderada', 'Intensa']} values={['Ausente', 'Leve', 'Moderada', 'Intensa']} value={escalas.bh.sudorese} onChange={v=>setEscalas({...escalas,bh:{...escalas.bh,sudorese:v}})}/>
+                                <CalcScaleRadio color="cyan" label="Ventilação Mecânica?" options={['Não / Cateter / Máscara', 'Sim (Umidificada)']} values={['Não', 'Sim (Umidificada)']} value={escalas.bh.ventMech} onChange={v=>setEscalas({...escalas,bh:{...escalas.bh,ventMech:v}})}/>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -276,22 +347,6 @@
         // =====================================================================
         // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO
         // =====================================================================
-        const nandaIntegral = [
-            { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento de saúde propenso a risco", "Síndrome do idoso frágil", "Autogestão ineficaz da saúde", "Prontidão para autogestão aprimorada da saúde", "Comportamentos de manutenção doméstica ineficazes"] },
-            { d: 2, name: "Nutrição", diagnoses: ["Deglutição prejudicada", "Nutrição desequilibrada: menor que as necessidades", "Volume de líquidos deficiente", "Risco de volume de líquidos deficiente", "Excesso de volume de líquidos", "Risco de desequilíbrio eletrolítico", "Risco de glicemia instável", "Função hepática prejudicada", "Risco de função hepática prejudicada", "Produção insuficiente de leite materno", "Amamentação ineficaz", "Dinâmica alimentar infantil ineficaz", "Obesidade", "Sobrepeso", "Risco de sobrepeso", "Resposta ineficaz de sucção e deglutição do bebê"] },
-            { d: 3, name: "Eliminação e Troca", diagnoses: ["Eliminação urinária prejudicada", "Retenção urinária", "Risco de retenção urinária", "Incontinência urinária de esforço", "Incontinência urinária de urgência", "Incontinência urinária mista", "Incontinência urinária associada à deficiência", "Constipação", "Risco de constipação", "Constipação percebida", "Constipação funcional crônica", "Risco de constipação funcional crônica", "Continência intestinal prejudicada", "Diarreia", "Incontinência fecal", "Motilidade gastrintestinal disfuncional", "Risco de motilidade gastrintestinal disfuncional", "Troca de gases prejudicada", "Função gastrintestinal prejudicada"] },
-            { d: 4, name: "Atividade/Repouso", diagnoses: ["Distúrbio no padrão do sono", "Privação de sono", "Prontidão para sono aprimorado", "Insônia", "Diminuição da tolerância à atividade", "Risco de diminuição da tolerância à atividade", "Mobilidade física prejudicada", "Mobilidade no leito prejudicada", "Mobilidade em cadeira de rodas prejudicada", "Risco de síndrome do desuso", "Fadiga", "Débito cardíaco diminuído", "Risco de diminuição do débito cardíaco", "Risco de função cardiovascular prejudicada", "Padrão respiratório ineficaz", "Limpeza ineficaz de vias aéreas", "Resposta disfuncional ao desmame ventilatório", "Perfusão tissular periférica ineficaz", "Risco de perfusão tissular periférica ineficaz", "Ventilação espontânea prejudicada", "Risco de sangramento", "Risco de trombose", "Déficit no autocuidado para banho/higiene", "Déficit no autocuidado para alimentação", "Déficit no autocuidado para vestir-se", "Déficit no autocuidado para eliminação"] },
-            { d: 5, name: "Percepção/Cognição", diagnoses: ["Confusão aguda", "Risco de confusão aguda", "Confusão crônica", "Memória prejudicada", "Conhecimento deficiente", "Prontidão para conhecimento aprimorado", "Comunicação verbal prejudicada", "Processo de pensamento perturbado", "Controle de impulso ineficaz", "Controle emocional instável", "Negligência unilateral"] },
-            { d: 6, name: "Autopercepção", diagnoses: ["Desesperança", "Risco de dignidade humana comprometida", "Autoestima baixa crônica", "Autoestima baixa situacional", "Distúrbio na imagem corporal", "Identidade pessoal perturbada"] },
-            { d: 7, name: "Papéis e Relações", diagnoses: ["Processos familiares disfuncionais", "Processos familiares interrompidos", "Tensão do papel de cuidador", "Risco de tensão do papel de cuidador", "Interação social prejudicada", "Desempenho de papel ineficaz", "Síndrome de identidade familiar perturbada", "Paternidade ou maternidade prejudicada"] },
-            { d: 8, name: "Sexualidade", diagnoses: ["Padrão de sexualidade ineficaz", "Disfunção sexual", "Processo de maternidade ineficaz", "Risco de processo de maternidade ineficaz", "Risco de díade materno-fetal perturbada"] },
-            { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto desadaptativo", "Risco de luto desadaptativo", "Enfrentamento ineficaz", "Enfrentamento familiar comprometido", "Impotência", "Risco de impotência", "Resiliência prejudicada", "Síndrome do trauma de estupro", "Síndrome do estresse de mudança", "Planejamento de atividades ineficaz", "Disreflexia autonômica", "Comportamento infantil desorganizado"] },
-            { d: 10, name: "Princípios de Vida", diagnoses: ["Sofrimento espiritual", "Risco de sofrimento espiritual", "Conflito de decisões", "Não adesão", "Angústia moral", "Religiosidade prejudicada"] },
-            { d: 11, name: "Segurança/Proteção", diagnoses: ["Risco de infecção", "Integridade da pele prejudicada", "Risco de integridade da pele prejudicada", "Integridade tissular prejudicada", "Risco de lesão por pressão em adulto", "Risco de lesão por pressão infantil", "Risco de lesão por pressão neonatal", "Risco de queda", "Risco de aspiração", "Risco de choque", "Risco de trauma vascular", "Risco de lesão do trato urinário", "Risco de lesão de posicionamento perioperatório", "Termorregulação ineficaz", "Hipertermia", "Hipotermia", "Risco de hipotermia", "Risco de reação alérgica", "Risco de comportamento suicida", "Automutilação"] },
-            { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Síndrome de dor crônica", "Dor do parto", "Conforto prejudicado", "Náusea", "Isolamento social"] },
-            { d: 13, name: "Cresc. e Desenvolv.", diagnoses: ["Atraso no desenvolvimento infantil", "Risco de atraso no desenvolvimento infantil", "Atraso no desenvolvimento motor infantil", "Risco de atraso no desenvolvimento motor infantil"] }
-        ];
-
         const InputField = ({ label, value, onChange, placeholder='' }) => (
             <div className="w-full mb-3">
                 <div className="text-[10px] font-bold uppercase text-slate-400 mb-1">{label}</div>
@@ -312,6 +367,22 @@
             const [searchTerm, setSearchTerm] = useState('');
             const [copySuccess, setCopySuccess] = useState(false);
             
+            const nandaIntegral = [
+                { d: 1, name: "Promoção da Saúde", diagnoses: ["Estilo de vida sedentário", "Controle ineficaz da saúde", "Manutenção ineficaz da saúde", "Comportamento de saúde propenso a risco", "Síndrome do idoso frágil", "Autogestão ineficaz da saúde", "Prontidão para autogestão aprimorada da saúde", "Comportamentos de manutenção doméstica ineficazes"] },
+                { d: 2, name: "Nutrição", diagnoses: ["Deglutição prejudicada", "Nutrição desequilibrada: menor que as necessidades", "Volume de líquidos deficiente", "Risco de volume de líquidos deficiente", "Excesso de volume de líquidos", "Risco de desequilíbrio eletrolítico", "Risco de glicemia instável", "Função hepática prejudicada", "Risco de função hepática prejudicada", "Produção insuficiente de leite materno", "Amamentação ineficaz", "Dinâmica alimentar infantil ineficaz", "Obesidade", "Sobrepeso", "Risco de sobrepeso", "Resposta ineficaz de sucção e deglutição do bebê"] },
+                { d: 3, name: "Eliminação e Troca", diagnoses: ["Eliminação urinária prejudicada", "Retenção urinária", "Risco de retenção urinária", "Incontinência urinária de esforço", "Incontinência urinária de urgência", "Incontinência urinária mista", "Incontinência urinária associada à deficiência", "Constipação", "Risco de constipação", "Constipação percebida", "Constipação funcional crônica", "Risco de constipação funcional crônica", "Continência intestinal prejudicada", "Diarreia", "Incontinência fecal", "Motilidade gastrintestinal disfuncional", "Risco de motilidade gastrintestinal disfuncional", "Troca de gases prejudicada", "Função gastrintestinal prejudicada"] },
+                { d: 4, name: "Atividade/Repouso", diagnoses: ["Distúrbio no padrão do sono", "Privação de sono", "Prontidão para sono aprimorado", "Insônia", "Diminuição da tolerância à atividade", "Risco de diminuição da tolerância à atividade", "Mobilidade física prejudicada", "Mobilidade no leito prejudicada", "Mobilidade em cadeira de rodas prejudicada", "Risco de síndrome do desuso", "Fadiga", "Débito cardíaco diminuído", "Risco de diminuição do débito cardíaco", "Risco de função cardiovascular prejudicada", "Padrão respiratório ineficaz", "Limpeza ineficaz de vias aéreas", "Resposta disfuncional ao desmame ventilatório", "Perfusão tissular periférica ineficaz", "Risco de perfusão tissular periférica ineficaz", "Ventilação espontânea prejudicada", "Risco de sangramento", "Risco de trombose", "Déficit no autocuidado para banho/higiene", "Déficit no autocuidado para alimentação", "Déficit no autocuidado para vestir-se", "Déficit no autocuidado para eliminação"] },
+                { d: 5, name: "Percepção/Cognição", diagnoses: ["Confusão aguda", "Risco de confusão aguda", "Confusão crônica", "Memória prejudicada", "Conhecimento deficiente", "Prontidão para conhecimento aprimorado", "Comunicação verbal prejudicada", "Processo de pensamento perturbado", "Controle de impulso ineficaz", "Controle emocional instável", "Negligência unilateral"] },
+                { d: 6, name: "Autopercepção", diagnoses: ["Desesperança", "Risco de dignidade humana comprometida", "Autoestima baixa crônica", "Autoestima baixa situacional", "Distúrbio na imagem corporal", "Identidade pessoal perturbada"] },
+                { d: 7, name: "Papéis e Relações", diagnoses: ["Processos familiares disfuncionais", "Processos familiares interrompidos", "Tensão do papel de cuidador", "Risco de tensão do papel de cuidador", "Interação social prejudicada", "Desempenho de papel ineficaz", "Síndrome de identidade familiar perturbada", "Paternidade ou maternidade prejudicada"] },
+                { d: 8, name: "Sexualidade", diagnoses: ["Padrão de sexualidade ineficaz", "Disfunção sexual", "Processo de maternidade ineficaz", "Risco de processo de maternidade ineficaz", "Risco de díade materno-fetal perturbada"] },
+                { d: 9, name: "Enfrentamento/Stress", diagnoses: ["Ansiedade", "Medo", "Tristeza crônica", "Luto desadaptativo", "Risco de luto desadaptativo", "Enfrentamento ineficaz", "Enfrentamento familiar comprometido", "Impotência", "Risco de impotência", "Resiliência prejudicada", "Síndrome do trauma de estupro", "Síndrome do estresse de mudança", "Planejamento de atividades ineficaz", "Disreflexia autonômica", "Comportamento infantil desorganizado"] },
+                { d: 10, name: "Princípios de Vida", diagnoses: ["Sofrimento espiritual", "Risco de sofrimento espiritual", "Conflito de decisões", "Não adesão", "Angústia moral", "Religiosidade prejudicada"] },
+                { d: 11, name: "Segurança/Proteção", diagnoses: ["Risco de infecção", "Integridade da pele prejudicada", "Risco de integridade da pele prejudicada", "Integridade tissular prejudicada", "Risco de lesão por pressão em adulto", "Risco de lesão por pressão infantil", "Risco de lesão por pressão neonatal", "Risco de queda", "Risco de aspiração", "Risco de choque", "Risco de trauma vascular", "Risco de lesão do trato urinário", "Risco de lesão de posicionamento perioperatório", "Termorregulação ineficaz", "Hipertermia", "Hipotermia", "Risco de hipotermia", "Risco de reação alérgica", "Risco de comportamento suicida", "Automutilação"] },
+                { d: 12, name: "Conforto", diagnoses: ["Dor aguda", "Dor crônica", "Síndrome de dor crônica", "Dor do parto", "Conforto prejudicado", "Náusea", "Isolamento social"] },
+                { d: 13, name: "Cresc. e Desenvolv.", diagnoses: ["Atraso no desenvolvimento infantil", "Risco de atraso no desenvolvimento infantil", "Atraso no desenvolvimento motor infantil", "Risco de atraso no desenvolvimento motor infantil"] }
+            ];
+
             const initialSoicState = {
                 adm: { procedencia: '', acompanhante: '', queixa: '', hpp: '' },
                 subjetivo: '', sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
@@ -855,7 +926,7 @@
                                 <button onClick={() => setView('DASHBOARD')} className="text-slate-400 hover:text-white transition-colors"><Icons.Back /></button>
                                 <div><h1 className="text-xl font-bold text-white">Auditoria: {p.label}</h1></div>
                             </div>
-                            <button onClick={() => setView('COMPILADO_PERIODO')} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                            <button onClick={() => setView('COMPILADO_PERIODO')} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shadow-lg">
                                 <Icons.Chart size={16}/> Relatório do Mês
                             </button>
                         </header>
@@ -1040,7 +1111,7 @@
             const MobileNav = () => (
                 <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe no-print">
                     <button onClick={() => navTo('DASHBOARD')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${['DASHBOARD','COMPILADO_ANUAL','LOGIN'].includes(view) ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.Dashboard /> <span className="text-[8px] font-bold mt-1">Gestão</span></button>
-                    <button onClick={() => navTo('CALCULADORAS')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'CALCULADORAS' ? 'text-amber-500' : 'text-slate-500 hover:text-white'}`}><Icons.Calculator /> <span className="text-[8px] font-bold mt-1">Escalas</span></button>
+                    <button onClick={() => navTo('CALCULADORAS')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'CALCULADORAS' ? 'text-amber-500' : 'text-slate-500 hover:text-white'}`}><Icons.Calculator /> <span className="text-[8px] font-bold mt-1">Cálculos</span></button>
                     {selectedPeriod && isAuthenticated && <button onClick={() => navTo('PERIODO')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${['PERIODO','COMPILADO_PERIODO'].includes(view) ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.Folder /> <span className="text-[8px] font-bold mt-1">Amostra</span></button>}
                     {selectedRecord && isAuthenticated && <button onClick={() => navTo('AVALIACAO')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'AVALIACAO' ? 'text-blue-500' : 'text-slate-500 hover:text-white'}`}><Icons.FileEdit /> <span className="text-[8px] font-bold mt-1">Auditoria</span></button>}
                     <button onClick={() => navTo('SOIC')} className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${view === 'SOIC' ? 'text-emerald-500' : 'text-slate-500 hover:text-white'}`}><Icons.Activity /> <span className="text-[8px] font-bold mt-1">SOIC</span></button>
@@ -1077,7 +1148,7 @@
                                 <Icons.Activity /> <span className="text-sm font-medium">Assistente Clínico SOIC</span>
                             </button>
                             <button onClick={() => navTo('CALCULADORAS')} className={`flex items-center justify-start gap-3 p-3 rounded-md transition-colors ${view === 'CALCULADORAS' ? 'bg-amber-600/10 text-amber-500 border border-amber-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-amber-400'}`}>
-                                <Icons.Calculator /> <span className="text-sm font-medium">Calculadora de Escalas</span>
+                                <Icons.Calculator /> <span className="text-sm font-medium">Cálculos Clínicos</span>
                             </button>
                         </div>
                     </div>
