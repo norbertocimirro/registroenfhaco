@@ -167,7 +167,7 @@
         };
 
         // =====================================================================
-        // DADOS DAS ESCALAS CLÍNICAS (COMPARTILHADOS ENTRE MÓDULOS)
+        // MÓDULO CALCULADORAS (ESCALAS E PERDAS INSENSÍVEIS)
         // =====================================================================
         const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
         const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", de: "Deambulação", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminação", te: "Terapêutica", ic: "Integridade Cutânea-Mucosa", cu: "Curativo", tc: "Tempo na troca de curativo" };
@@ -190,7 +190,7 @@
         const morseFull = { h: ["Não(0)", "Sim(25)"], d: ["Não(0)", "Sim(15)"], a: ["Nenhum(0)", "Auxílio(15)", "Móveis(30)"], t: ["Não(0)", "Sim(20)"], m: ["Normal(0)", "Fraca(10)", "Comprometida(20)"], e: ["Orientado(0)", "Esquece limites(15)"] };
 
         const CalcScaleRadio = ({ label, options, values, value, onChange, color='blue' }) => {
-            const colorStyles = { blue: 'bg-blue-600 border-blue-500 text-white', emerald: 'bg-emerald-600 border-emerald-500 text-white', purple: 'bg-purple-600 border-purple-500 text-white', cyan: 'bg-cyan-600 border-cyan-500 text-white' };
+            const colorStyles = { blue: 'bg-blue-600 border-blue-500 text-white shadow-md', emerald: 'bg-emerald-600 border-emerald-500 text-white shadow-md', purple: 'bg-purple-600 border-purple-500 text-white shadow-md', cyan: 'bg-cyan-600 border-cyan-500 text-white shadow-md' };
             const titleColors = { blue: 'text-blue-400', emerald: 'text-emerald-400', purple: 'text-purple-400', cyan: 'text-cyan-400' };
             return (
                 <div className="space-y-2 mb-4">
@@ -200,7 +200,7 @@
                             const val = values ? values[idx] : (typeof opt === 'string' ? idx + 1 : opt);
                             const active = value === val;
                             return (
-                                <button key={idx} onClick={() => onChange(val)} className={`text-left px-4 py-3 rounded-xl text-xs md:text-sm font-semibold transition-all border ${active ? colorStyles[color] : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-700/50'}`}>
+                                <button key={idx} onClick={() => onChange(val)} className={`text-left px-4 py-3 rounded-xl text-xs md:text-sm font-semibold transition-all border ${active ? colorStyles[color] : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-700/50 hover:text-slate-200'}`}>
                                     {opt}
                                 </button>
                             );
@@ -210,9 +210,6 @@
             );
         };
 
-        // =====================================================================
-        // MÓDULO: CALCULADORAS (UX TABS EDITION)
-        // =====================================================================
         const CalculadorasApp = () => {
             const initialState = { 
                 braden: { p:null, u:null, a:null, m:null, n:null, f:null }, 
@@ -221,7 +218,7 @@
                 bh: { peso: '', horas: '', febre: null, taquipneia: null, sudorese: null, ventMech: null } 
             };
             const [escalas, setEscalas] = useState(initialState);
-            const [activeTab, setActiveTab] = useState('BRADEN'); // BRADEN | FUGULIN | MORSE | BH
+            const [activeTab, setActiveTab] = useState('BRADEN'); // BRADEN | MORSE | FUGULIN | BH
 
             const bradenCalc = useMemo(() => { 
                 const b=escalas.braden; if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
@@ -269,25 +266,25 @@
                             <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl"><Icons.Calculator size={28} className="text-amber-500"/></div>
                             <div>
                                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Cálculos Clínicos</h1>
-                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Cálculo Rápido de Enfermagem</p>
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Ferramentas Rápidas de Enfermagem</p>
                             </div>
                         </div>
-                        <button onClick={reset} className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-3 shadow-sm">
+                        <button onClick={reset} className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-red-400 transition-colors flex items-center justify-center gap-3 shadow-sm hover:text-red-300">
                             <Icons.Trash size={18}/> Limpar Dados
                         </button>
                     </header>
 
                     <div className="flex gap-2 bg-slate-900 p-2 rounded-2xl border border-slate-800 mb-8 overflow-x-auto no-scrollbar">
                         <button onClick={()=>setActiveTab('BRADEN')} className={`px-5 py-3 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all ${activeTab==='BRADEN'?'bg-blue-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}>Braden</button>
-                        <button onClick={()=>setActiveTab('FUGULIN')} className={`px-5 py-3 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all ${activeTab==='FUGULIN'?'bg-emerald-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}>Fugulin</button>
                         <button onClick={()=>setActiveTab('MORSE')} className={`px-5 py-3 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all ${activeTab==='MORSE'?'bg-purple-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}>Morse</button>
+                        <button onClick={()=>setActiveTab('FUGULIN')} className={`px-5 py-3 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all ${activeTab==='FUGULIN'?'bg-emerald-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}>Fugulin</button>
                         <button onClick={()=>setActiveTab('BH')} className={`px-5 py-3 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all flex items-center justify-center gap-2 ${activeTab==='BH'?'bg-cyan-600 text-white shadow-lg':'text-slate-400 hover:bg-slate-800'}`}><Icons.Droplets size={16}/> Perdas Insensíveis</button>
                     </div>
                     
                     {activeTab === 'BRADEN' && (
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm animate-fade">
                             <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-blue-500 mb-2">Escala de Braden</h2>
+                                <h2 className="text-sm font-black uppercase tracking-widest text-blue-500 mb-2">Escala de Braden <span className="text-slate-500 ml-1">(6 a 23 pts)</span></h2>
                                 <div className="text-6xl font-black text-white mb-2">{bradenCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
                                 <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${bradenCalc.t > 0 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{bradenCalc.r}</div>
                             </div>
@@ -295,21 +292,10 @@
                         </div>
                     )}
 
-                    {activeTab === 'FUGULIN' && (
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm animate-fade">
-                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin (HACO)</h2>
-                                <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
-                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{fugulinCalc.d}</div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}</div>
-                        </div>
-                    )}
-
                     {activeTab === 'MORSE' && (
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm animate-fade">
                             <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                <h2 className="text-sm font-black uppercase tracking-widest text-purple-500 mb-2">Escala de Morse</h2>
+                                <h2 className="text-sm font-black uppercase tracking-widest text-purple-500 mb-2">Escala de Morse <span className="text-slate-500 ml-1">(0 a 125 pts)</span></h2>
                                 <div className="text-6xl font-black text-white mb-2">{morseCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
                                 <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${morseCalc.t > 0 ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{morseCalc.r}</div>
                             </div>
@@ -321,6 +307,17 @@
                                 <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={escalas.morse.m} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,m:v}})}/> 
                                 <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={escalas.morse.e} onChange={v=>setEscalas({...escalas,morse:{...escalas.morse,e:v}})}/>
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'FUGULIN' && (
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm animate-fade">
+                            <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
+                                <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin HACO <span className="text-slate-500 ml-1">(12 a 48 pts)</span></h2>
+                                <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
+                                <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{fugulinCalc.d}</div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={escalas.fugulin[k]} onChange={v=>setEscalas({...escalas,fugulin:{...escalas.fugulin,[k]:v}})}/>)}</div>
                         </div>
                     )}
 
@@ -429,7 +426,7 @@
                     <div className="text-[9px] text-slate-500 uppercase font-bold mb-1.5">{label}</div>
                     <div className="flex flex-wrap gap-1.5">
                         {options.map(o => (
-                            <button key={o} onClick={() => toggleElim(tipo, campo, o)} className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${form.elims[tipo][campo] === o ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                            <button key={o} onClick={() => toggleElim(tipo, campo, o)} className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${form.elims[tipo][campo] === o ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-700/50 hover:text-slate-200'}`}>
                                 {o}
                             </button>
                         ))}
@@ -443,6 +440,7 @@
                 
                 let text = `S: ${form.subjetivo || 'Paciente estável, sem queixas intercorrentes.'}\n\n`;
                 text += `O: [SINAIS VITAIS]\nPA: ${form.sv.pa||'-'} | FC: ${form.sv.fc||'-'} | FR: ${form.sv.fr||'-'} | T: ${form.sv.temp||'-'} | Sat: ${form.sv.spo2||'-'}% | EVA: ${form.sv.eva||'-'}\n\n`;
+                
                 text += `[ESCALAS TÉCNICAS]\n- Braden: ${bradenCalc.t > 0 ? bradenCalc.t : '-'} (${bradenCalc.r})\n- Morse: ${morseCalc.t > 0 ? morseCalc.t : '-'} (${morseCalc.r})\n- Fugulin: ${fugulinCalc.t > 0 ? fugulinCalc.t : '-'} (${fugulinCalc.d})\n\n`;
                 
                 let temExame = false;
@@ -454,12 +452,8 @@
 
                 if (hasVesical || hasIntestinal) {
                     text += `[ELIMINAÇÕES FISIOLÓGICAS]\n`;
-                    if (hasVesical) {
-                        text += `- Vesical: ${form.elims.vesical.via||'N/I'} | Aspecto: ${form.elims.vesical.aspecto||'N/I'} | Vol: ${form.elims.vesical.volume||'N/I'} ${form.elims.vesical.ml ? '('+form.elims.vesical.ml+')' : ''}\n`;
-                    }
-                    if (hasIntestinal) {
-                        text += `- Intestinal: ${form.elims.intestinal.via||'N/I'} | Aspecto: ${form.elims.intestinal.aspecto||'N/I'} | Freq: ${form.elims.intestinal.freq||'N/I'}\n`;
-                    }
+                    if (hasVesical) text += `- Vesical: ${form.elims.vesical.via||'N/I'} | Aspecto: ${form.elims.vesical.aspecto||'N/I'} | Vol: ${form.elims.vesical.volume||'N/I'} ${form.elims.vesical.ml ? '('+form.elims.vesical.ml+')' : ''}\n`;
+                    if (hasIntestinal) text += `- Intestinal: ${form.elims.intestinal.via||'N/I'} | Aspecto: ${form.elims.intestinal.aspecto||'N/I'} | Freq: ${form.elims.intestinal.freq||'N/I'}\n`;
                     text += `\n`;
                 }
 
@@ -526,8 +520,13 @@
 
                             {activeTab === 'EVOLUCAO' && (
                                 <div className="space-y-6">
-                                    <div className="flex gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
-                                        {['S','O','I','C'].map(s=><button key={s} onClick={()=>setActiveSection(s)} className={`flex-1 py-2 rounded-lg text-[10px] md:text-xs font-black transition-all ${activeSection===s?'bg-emerald-600 text-white':'text-slate-400'}`}>{s}</button>)}
+                                    <div className="flex gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700 overflow-x-auto no-scrollbar">
+                                        {[
+                                            {id: 'S', label: 'Subjetivo (S)'},
+                                            {id: 'O', label: 'Objetivo (O)'},
+                                            {id: 'I', label: 'Diag. NANDA (I)'},
+                                            {id: 'C', label: 'Conduta (C)'}
+                                        ].map(s=><button key={s.id} onClick={()=>setActiveSection(s.id)} className={`flex-1 min-w-[110px] py-2.5 rounded-lg text-[11px] font-black transition-all ${activeSection===s.id?'bg-emerald-600 text-white shadow-md':'text-slate-400 hover:bg-slate-700/50 hover:text-slate-300'}`}>{s.label}</button>)}
                                     </div>
                                     
                                     {activeSection === 'S' && <TextAreaField label="Relato Subjetivo / Queixas" h="h-64" value={form.subjetivo} onChange={v=>setForm({...form, subjetivo:v})} />}
@@ -542,19 +541,19 @@
                                             <div className="bg-slate-800 p-4 md:p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-3">Avaliação de Escalas</div>
                                                 <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
-                                                    <button onClick={()=>setOpenScale(openScale==='braden'?null:'braden')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${openScale==='braden'?'bg-blue-600 text-white':'bg-slate-900 border border-slate-700 text-slate-400'}`}>Braden: {bradenCalc.t > 0 ? bradenCalc.t : '-'}</button>
-                                                    <button onClick={()=>setOpenScale(openScale==='fugulin'?null:'fugulin')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${openScale==='fugulin'?'bg-emerald-600 text-white':'bg-slate-900 border border-slate-700 text-slate-400'}`}>Fugulin: {fugulinCalc.t > 0 ? fugulinCalc.t : '-'}</button>
-                                                    <button onClick={()=>setOpenScale(openScale==='morse'?null:'morse')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${openScale==='morse'?'bg-purple-600 text-white':'bg-slate-900 border border-slate-700 text-slate-400'}`}>Morse: {morseCalc.t > 0 ? morseCalc.t : '-'}</button>
+                                                    <button onClick={()=>setOpenScale(openScale==='braden'?null:'braden')} className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${openScale==='braden'?'bg-blue-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-400 hover:bg-slate-800'}`}>Braden: {bradenCalc.t > 0 ? bradenCalc.t : '-'}</button>
+                                                    <button onClick={()=>setOpenScale(openScale==='morse'?null:'morse')} className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${openScale==='morse'?'bg-purple-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-400 hover:bg-slate-800'}`}>Morse: {morseCalc.t > 0 ? morseCalc.t : '-'}</button>
+                                                    <button onClick={()=>setOpenScale(openScale==='fugulin'?null:'fugulin')} className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${openScale==='fugulin'?'bg-emerald-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-400 hover:bg-slate-800'}`}>Fugulin: {fugulinCalc.t > 0 ? fugulinCalc.t : '-'}</button>
                                                 </div>
                                                 
                                                 {openScale === 'braden' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={form.escalas.braden[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,braden:{...form.escalas.braden,[k]:v}}})}/>)}</div>}
-                                                {openScale === 'fugulin' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={form.escalas.fugulin[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,fugulin:{...form.escalas.fugulin,[k]:v}}})}/>)}</div>}
                                                 {openScale === 'morse' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
+                                                {openScale === 'fugulin' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={form.escalas.fugulin[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,fugulin:{...form.escalas.fugulin,[k]:v}}})}/>)}</div>}
                                             </div>
                                             
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Exame Físico Rápido</div>
-                                                <div className="flex flex-wrap gap-2">{["LOTE", "Sonolento", "Eupnéico", "Dispnéico", "MV+ sem RA", "BRNF", "Pele Íntegra", "Descorado", "Edema", "Pupilas Isocóricas"].map(o=><button key={o} onClick={()=>toggleExame('Geral',o)} className={`px-4 py-2 rounded-lg text-[10px] font-bold border transition-colors ${form.exame['Geral']?.includes(o)?'bg-emerald-600 border-emerald-500 text-white':'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}>{o}</button>)}</div>
+                                                <div className="flex flex-wrap gap-2">{["LOTE", "Sonolento", "Eupnéico", "Dispnéico", "MV+ sem RA", "BRNF", "Pele Íntegra", "Descorado", "Edema", "Pupilas Isocóricas"].map(o=><button key={o} onClick={()=>toggleExame('Geral',o)} className={`px-4 py-2 rounded-lg text-[10px] font-bold border transition-colors ${form.exame['Geral']?.includes(o)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{o}</button>)}</div>
                                             </div>
 
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
@@ -566,7 +565,7 @@
                                                         <ElimButtonGroup label="Aspecto" tipo="vesical" campo="aspecto" options={['Claro/Límpido', 'Concentrado', 'Colúrico', 'Hematúrico', 'Piúrico']} />
                                                         <ElimButtonGroup label="Volume/Débito" tipo="vesical" campo="volume" options={['Presente (Normal)', 'Anúria', 'Oligúria', 'Poliúria']} />
                                                         <div className="flex items-center gap-2 mt-2">
-                                                            <input className="w-24 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 text-center" placeholder="Ex: 500ml" value={form.elims.vesical.ml} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, ml: e.target.value}}})} />
+                                                            <input className="w-24 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" placeholder="Ex: 500ml" value={form.elims.vesical.ml} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, ml: e.target.value}}})} />
                                                             <span className="text-[10px] text-slate-500 font-bold uppercase">Volume Exato (Opcional)</span>
                                                         </div>
                                                     </div>
@@ -582,25 +581,25 @@
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Invasivos, Sondas e Drenos</div>
                                                 <div className="flex flex-wrap gap-2 mb-6">
-                                                    <button onClick={()=>setForm({...form, vasculares:[...form.vasculares,{id:Date.now(),tipo:'AVP',sitio:'',obs:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Acesso Vascular</button>
-                                                    <button onClick={()=>setForm({...form, viasAereas:[...form.viasAereas,{id:Date.now(),tipo:'O2 Cateter',fixacao:'',cuff:'',secrecao:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Via Aérea</button>
-                                                    <button onClick={()=>setForm({...form, sondasDrenos:[...form.sondasDrenos,{id:Date.now(),tipo:'Dreno de Portovac',debito:'',aspecto:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Outros Drenos/Sondas</button>
+                                                    <button onClick={()=>setForm({...form, vasculares:[...form.vasculares,{id:Date.now(),tipo:'AVP',sitio:'',obs:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Acesso Vascular</button>
+                                                    <button onClick={()=>setForm({...form, viasAereas:[...form.viasAereas,{id:Date.now(),tipo:'O2 Cateter',fixacao:'',cuff:'',secrecao:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Via Aérea</button>
+                                                    <button onClick={()=>setForm({...form, sondasDrenos:[...form.sondasDrenos,{id:Date.now(),tipo:'Dreno de Portovac',debito:'',aspecto:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Outros Drenos/Sondas</button>
                                                 </div>
 
                                                 <div className="space-y-3">
-                                                    {form.vasculares.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Acesso (ex: AVP)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.sitio} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,sitio:e.target.value}:x)})} placeholder="Sítio (ex: MSE)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.obs} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,obs:e.target.value}:x)})} placeholder="Obs (Limpo/Pérvio)"/><button onClick={()=>setForm({...form,vasculares:form.vasculares.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
-                                                    {form.viasAereas.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Via Aérea"/><input className="w-24 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center" value={v.fixacao} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,fixacao:e.target.value}:x)})} placeholder="Fixação(cm)"/><button onClick={()=>setForm({...form,viasAereas:form.viasAereas.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
-                                                    {form.sondasDrenos.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.tipo} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Sonda/Dreno"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" value={v.aspecto} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,aspecto:e.target.value}:x)})} placeholder="Aspecto (ex: Seroso)"/><input className="w-28 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center" value={v.debito} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,debito:e.target.value}:x)})} placeholder="Débito(ml)"/><button onClick={()=>setForm({...form,sondasDrenos:form.sondasDrenos.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
+                                                    {form.vasculares.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Acesso (ex: AVP)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.sitio} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,sitio:e.target.value}:x)})} placeholder="Sítio (ex: MSE)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.obs} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,obs:e.target.value}:x)})} placeholder="Obs (Limpo/Pérvio)"/><button onClick={()=>setForm({...form,vasculares:form.vasculares.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
+                                                    {form.viasAereas.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Via Aérea"/><input className="w-24 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" value={v.fixacao} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,fixacao:e.target.value}:x)})} placeholder="Fixação(cm)"/><button onClick={()=>setForm({...form,viasAereas:form.viasAereas.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
+                                                    {form.sondasDrenos.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Sonda/Dreno"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.aspecto} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,aspecto:e.target.value}:x)})} placeholder="Aspecto (ex: Seroso)"/><input className="w-28 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" value={v.debito} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,debito:e.target.value}:x)})} placeholder="Débito(ml)"/><button onClick={()=>setForm({...form,sondasDrenos:form.sondasDrenos.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
                                                 </div>
                                             </div>
                                         </div>
                                     )}
                                     {activeSection === 'I' && (
                                         <div className="space-y-4">
-                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white outline-none focus:border-emerald-500 mb-4" placeholder="Buscar diagnóstico NANDA-I..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>
+                                            <input className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white outline-none focus:border-emerald-500 mb-4 transition-colors" placeholder="Buscar diagnóstico NANDA-I..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>
                                             <div className="max-h-80 overflow-y-auto custom-scrollbar pr-2 space-y-6">
                                                 {nandaIntegral.map(c=>(
-                                                    <div key={c.d}><div className="text-[10px] font-black uppercase text-slate-500 mb-3 border-l-2 border-emerald-500 pl-2">Domínio {c.d}: {c.name}</div><div className="flex flex-wrap gap-2">{c.diagnoses.filter(d=>d.toLowerCase().includes(searchTerm.toLowerCase())).map(d=><button key={d} onClick={()=>setForm(p=>({...p,diagnosticos:p.diagnosticos.includes(d)?p.diagnosticos.filter(x=>x!==d):[...p.diagnosticos,d]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.diagnosticos.includes(d)?'bg-emerald-600 text-white shadow-lg':'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500'}`}>{d}</button>)}</div></div>
+                                                    <div key={c.d}><div className="text-[10px] font-black uppercase text-slate-500 mb-3 border-l-2 border-emerald-500 pl-2">Domínio {c.d}: {c.name}</div><div className="flex flex-wrap gap-2">{c.diagnoses.filter(d=>d.toLowerCase().includes(searchTerm.toLowerCase())).map(d=><button key={d} onClick={()=>setForm(p=>({...p,diagnosticos:p.diagnosticos.includes(d)?p.diagnosticos.filter(x=>x!==d):[...p.diagnosticos,d]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.diagnosticos.includes(d)?'bg-emerald-600 text-white shadow-md':'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-700/50'}`}>{d}</button>)}</div></div>
                                                 ))}
                                             </div>
                                             <div className="pt-4 border-t border-slate-800">
@@ -612,7 +611,7 @@
                                         <div className="space-y-6">
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-emerald-500 mb-4">Condutas Rápidas</div>
-                                                <div className="flex flex-wrap gap-2 mb-4">{["Monitorar SSVV", "Troca de Decúbito 2/2h", "Controle Glicêmico", "Grades Elevadas", "Precaução de Contato", "Aspiração SOS", "Balanço Hídrico", "Mudança de Decúbito", "Curativo Estéril"].map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-lg':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500'}`}>{c}</button>)}</div>
+                                                <div className="flex flex-wrap gap-2 mb-4">{["Monitorar SSVV", "Troca de Decúbito 2/2h", "Controle Glicêmico", "Grades Elevadas", "Precaução de Contato", "Aspiração SOS", "Balanço Hídrico", "Mudança de Decúbito", "Curativo Estéril"].map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{c}</button>)}</div>
                                             </div>
                                             <TextAreaField label="Notas e Cuidados Específicos" h="h-48" value={form.obs} onChange={v=>setForm({...form, obs:v})} />
                                         </div>
@@ -664,7 +663,7 @@
                                 <input 
                                     type="password" 
                                     placeholder="Senha de Auditor" 
-                                    className={`w-full bg-slate-950 border ${err ? 'border-red-500' : 'border-slate-700'} rounded-xl px-4 py-3 text-center text-white tracking-widest outline-none focus:border-blue-500`}
+                                    className={`w-full bg-slate-950 border ${err ? 'border-red-500' : 'border-slate-700'} rounded-xl px-4 py-3 text-center text-white tracking-widest outline-none focus:border-blue-500 transition-colors`}
                                     value={pwd} 
                                     onChange={e => {setPwd(e.target.value); setErr(false);}}
                                     autoFocus
