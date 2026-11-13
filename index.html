@@ -170,10 +170,27 @@
         // MÓDULO CALCULADORAS (ESCALAS E PERDAS INSENSÍVEIS)
         // =====================================================================
         const titlesBraden = { p: "Percepção Sensorial", u: "Umidade", a: "Atividade", m: "Mobilidade", n: "Nutrição", f: "Fricção / Cisalhamento" };
-        const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", lo: "Locomoção", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminações", te: "Terapêutica" };
+        
+        // --- ESCALA DE FUGULIN HACO (12 ITENS) ---
+        const titlesFugulin = { em: "Estado Mental", ox: "Oxigenação", sv: "Sinais Vitais", mo: "Motilidade", de: "Deambulação", al: "Alimentação", cc: "Cuidado Corporal", el: "Eliminação", te: "Terapêutica", ic: "Integridade Cutânea-Mucosa", cu: "Curativo", tc: "Tempo na troca de curativo" };
 
         const bradenFull = { p: ["1. Total limitado", "2. Muito limitado", "3. Levemente limitado", "4. Sem limitação"], u: ["1. Constantemente úmida", "2. Muito úmida", "3. Ocasionalmente úmida", "4. Raramente úmida"], a: ["1. Acamado", "2. Em cadeira", "3. Deambula ocasionalmente", "4. Deambula frequentemente"], m: ["1. Total imóvel", "2. Muito limitada", "3. Levemente limitada", "4. Sem limitações"], n: ["1. Muito pobre", "2. Inadequada", "3. Adequada", "4. Excelente"], f: ["1. Problema", "2. Problema potencial", "3. Nenhum problema"] };
-        const fugulinFull = { em: ["Lúcido(1)", "Desorientado(2)", "Confuso(3)", "Comatoso(4)"], ox: ["Ar ambiente(1)", "O2 Interm.(2)", "O2 Contínuo(3)", "Vent.Mec(4)"], sv: ["Rotina(1)", "Intervalo 4h(2)", "Intervalo 2h(3)", "Monitor<1h(4)"], mo: ["Ativo(1)", "Limitação(2)", "Grande limitação(3)", "Imóvel(4)"], lo: ["Deambula(1)", "Cadeira(2)", "Sentar aux.(3)", "Restrito leito(4)"], al: ["Indep.(1)", "Auxílio(2)", "SNE/GTT(3)", "NPT(4)"], cc: ["Independente(1)", "Aux.banho(2)", "Higiene leito(3)", "Higiene complexa(4)"], el: ["Independente(1)", "Auxílio(2)", "Incontinência(3)", "Diálise(4)"], te: ["Oral(1)", "EV<24h(2)", "EV>24h(3)", "Vasoativos(4)"] };
+        
+        // Definição exata baseada na imagem do HACO
+        const fugulinFull = { 
+            em: ["1 - Orientação no tempo e espaço", "2 - Períodos de desorientação", "3 - Períodos de inconsciência", "4 - Inconsciente"], 
+            ox: ["1 - Não depende de Oxigênio", "2 - Uso intermitente de máscara ou Cateter de O2", "3 - Uso contínuo de máscara ou Cateter de O2", "4 - Ventilação Mecânica"], 
+            sv: ["1 - Controle de 8/8h ou mais", "2 - Controle de 6/6h", "3 - Controle de 4/4h", "4 - Controle de 2/2h"], 
+            mo: ["1 - Movimenta todos os segmentos corporais", "2 - Limitação de movimentos", "3 - Dificuldade para movimentar segmentos...", "4 - Incapaz de movimentar qualquer segmento..."], 
+            de: ["1 - Deambula sozinho", "2 - Necessita de auxílio para deambular", "3 - Locomoção através de cadeira de rodas", "4 - Restrito ao leito"],
+            al: ["1 - Autossuficiente", "2 - Oral com auxílio", "3 - Através de Sonda Enteral (SNE)", "4 - Através de Cateter Central (NPT)"], 
+            cc: ["1 - Autossuficiente", "2 - Banho no chuveiro e higiene oral auxiliados...", "3 - Banho no chuveiro e higiene oral pela Equipe...", "4 - Banho de leito pela Equipe..."], 
+            el: ["1 - Autossuficiente", "2 - Uso de vaso sanitário com auxílio", "3 - Uso de comadre ou eliminação no leito", "4 - Evacuação no Leito e Uso de Cateter Vesical..."], 
+            te: ["1 - IM ou VO", "2 - E.V Intermitente", "3 - E.V contínua ou através de cateter", "4 - Uso de drogas vasoativas para manutenção"],
+            ic: ["1 - Pele íntegra", "2 - Alteração da cor da pele e/ou Comp. Derme", "3 - Solução de continuidade envolve subcutâneo...", "4 - Destruição atinge músculo, tendões"],
+            cu: ["1 - Sem curativo", "2 - Troca de curativo 1x/dia", "3 - Troca de curativo 2x/dia", "4 - Troca de curativo 3x/dia"],
+            tc: ["1 - Sem curativo", "2 - Tempo de troca entre 05 e 15min", "3 - Tempo de troca entre 15min a 30min", "4 - Tempo de Troca maior que 30min"]
+        };
         const morseFull = { h: ["Não(0)", "Sim(25)"], d: ["Não(0)", "Sim(15)"], a: ["Nenhum(0)", "Auxílio(15)", "Móveis(30)"], t: ["Não(0)", "Sim(20)"], m: ["Normal(0)", "Fraca(10)", "Comprometida(20)"], e: ["Orientado(0)", "Esquece limites(15)"] };
 
         const CalcScaleRadio = ({ label, options, values, value, onChange, color='blue' }) => {
@@ -198,9 +215,14 @@
         };
 
         const CalculadorasApp = () => {
-            const initialState = { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null }, bh: { peso: '', horas: '', febre: null, taquipneia: null, sudorese: null, ventMech: null } };
+            const initialState = { 
+                braden: { p:null, u:null, a:null, m:null, n:null, f:null }, 
+                morse: { h:null, d:null, a:null, t:null, m:null, e:null }, 
+                fugulin: { em:null, ox:null, sv:null, mo:null, de:null, al:null, cc:null, el:null, te:null, ic:null, cu:null, tc:null }, 
+                bh: { peso: '', horas: '', febre: null, taquipneia: null, sudorese: null, ventMech: null } 
+            };
             const [escalas, setEscalas] = useState(initialState);
-            const [activeCalc, setActiveCalc] = useState('ESCALAS'); // ESCALAS | BH
+            const [activeCalc, setActiveCalc] = useState('ESCALAS');
 
             const bradenCalc = useMemo(() => { 
                 const b=escalas.braden; if(b.p===null && b.u===null && b.a===null && b.m===null && b.n===null && b.f===null) return {t: 0, r: "Pendente"};
@@ -212,44 +234,31 @@
                 const t=(m.h||0)+(m.d||0)+(m.a||0)+(m.t||0)+(m.m||0)+(m.e||0); return {t, r: t>=45?"Elevado":t>=25?"Moderado":"Baixo"}; 
             }, [escalas.morse]);
 
+            // Fugulin Classificação atualizada para 12-48 pontos
             const fugulinCalc = useMemo(() => { 
                 const f = escalas.fugulin; const vals = Object.values(f); if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
-                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
+                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); 
+                return {t, d: t>34?"Intensivos":t>=30?"Semi-Intensivos":t>=24?"Alta Dependência":t>=18?"Intermediários":"Mínimos"}; 
             }, [escalas.fugulin]);
 
-            // Cálculo das Perdas Insensíveis
             const piCalc = useMemo(() => {
                 const peso = parseFloat(escalas.bh.peso);
                 const horas = parseFloat(escalas.bh.horas);
                 if(isNaN(peso) || isNaN(horas) || peso <= 0 || horas <= 0) return { total: 0, base: 0, extras: 0, d: "Aguardando Peso e Tempo" };
-                
-                // Base: 0.5 ml/kg/h
                 let base = 0.5 * peso * horas;
                 let extras = 0;
-
-                // Febre: > 37.5°C (simplificado clínico: +0.1 a +0.2 ml/kg/h por hora)
                 if (escalas.bh.febre === '37.8 - 38.9°C') extras += (0.1 * peso * horas);
                 if (escalas.bh.febre === '≥ 39.0°C') extras += (0.2 * peso * horas);
-
-                // Taquipneia
-                if (escalas.bh.taquipneia === '21 - 30 irpm') extras += (base * 0.20); // +20%
-                if (escalas.bh.taquipneia === '> 30 irpm') extras += (base * 0.40); // +40%
-
-                // Sudorese (Estimativa volumétrica distribuída pelas horas)
-                // Leve: ~300ml/24h -> 12.5 ml/h
-                // Mod: ~600ml/24h -> 25 ml/h
-                // Intensa: ~1000ml/24h -> 41 ml/h
+                if (escalas.bh.taquipneia === '21 - 30 irpm') extras += (base * 0.20); 
+                if (escalas.bh.taquipneia === '> 30 irpm') extras += (base * 0.40); 
                 if (escalas.bh.sudorese === 'Leve') extras += (12.5 * horas);
                 if (escalas.bh.sudorese === 'Moderada') extras += (25 * horas);
                 if (escalas.bh.sudorese === 'Intensa') extras += (41.6 * horas);
-
-                // Ventilação Mecânica (Umidificada e aquecida reduz a perda respiratória, que é ~1/3 da perda total)
                 let total = base + extras;
                 if (escalas.bh.ventMech === 'Sim (Umidificada)') {
                     const perdaResp = (total * 0.33);
                     total = total - perdaResp;
                 }
-
                 return { total: Math.round(total), base: Math.round(base), extras: Math.round(extras), d: "Volume Estimado a Descontar" };
             }, [escalas.bh]);
 
@@ -288,7 +297,7 @@
 
                             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm">
                                 <div className="flex flex-col items-center justify-center bg-slate-950 p-6 rounded-2xl mb-8 border border-slate-800 shadow-inner text-center">
-                                    <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin</h2>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-2">Escala de Fugulin (HACO - 12 Itens)</h2>
                                     <div className="text-6xl font-black text-white mb-2">{fugulinCalc.t} <span className="text-xl text-slate-500 font-bold">Pts</span></div>
                                     <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest ${fugulinCalc.t > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{fugulinCalc.d}</div>
                                 </div>
@@ -389,7 +398,7 @@
                 exame: {}, vasculares: [], viasAereas: [], sondasDrenos: [], diagnosticos: [],
                 interpretacao: '', condutas: [], obs: '',
                 elims: { vesical: {via:'', aspecto:'', volume:'', ml:''}, intestinal: {via:'', aspecto:'', freq:''} },
-                escalas: { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, lo:null, al:null, cc:null, el:null, te:null } },
+                escalas: { braden: { p:null, u:null, a:null, m:null, n:null, f:null }, morse: { h:null, d:null, a:null, t:null, m:null, e:null }, fugulin: { em:null, ox:null, sv:null, mo:null, de:null, al:null, cc:null, el:null, te:null, ic:null, cu:null, tc:null } },
                 alta: { condicoes: '', destino: '', orientacoes: '' }
             };
             const [form, setForm] = useState(initialSoicState);
@@ -406,20 +415,11 @@
 
             const fugulinCalc = useMemo(() => { 
                 const f = form.escalas.fugulin; const vals = Object.values(f); if(vals.every(x => x === null)) return {t: 0, d: "Pendente"};
-                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>31?"Intensivos":t>26?"Semi-Int.":t>20?"Alta Dep.":t>14?"Intermed.":"Mínimos"}; 
+                const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>34?"Intensivos":t>=30?"Semi-Int.":t>=24?"Alta Dep.":t>=18?"Intermediários":"Mínimos"}; 
             }, [form.escalas.fugulin]);
 
             const toggleElim = (tipo, campo, val) => {
-                setForm(prev => ({
-                    ...prev,
-                    elims: {
-                        ...prev.elims,
-                        [tipo]: {
-                            ...prev.elims[tipo],
-                            [campo]: prev.elims[tipo][campo] === val ? '' : val
-                        }
-                    }
-                }));
+                setForm(prev => ({ ...prev, elims: { ...prev.elims, [tipo]: { ...prev.elims[tipo], [campo]: prev.elims[tipo][campo] === val ? '' : val } } }));
             };
 
             const ElimButtonGroup = ({ label, options, tipo, campo }) => (
@@ -452,12 +452,8 @@
 
                 if (hasVesical || hasIntestinal) {
                     text += `[ELIMINAÇÕES FISIOLÓGICAS]\n`;
-                    if (hasVesical) {
-                        text += `- Vesical: ${form.elims.vesical.via||'N/I'} | Aspecto: ${form.elims.vesical.aspecto||'N/I'} | Vol: ${form.elims.vesical.volume||'N/I'} ${form.elims.vesical.ml ? '('+form.elims.vesical.ml+')' : ''}\n`;
-                    }
-                    if (hasIntestinal) {
-                        text += `- Intestinal: ${form.elims.intestinal.via||'N/I'} | Aspecto: ${form.elims.intestinal.aspecto||'N/I'} | Freq: ${form.elims.intestinal.freq||'N/I'}\n`;
-                    }
+                    if (hasVesical) text += `- Vesical: ${form.elims.vesical.via||'N/I'} | Aspecto: ${form.elims.vesical.aspecto||'N/I'} | Vol: ${form.elims.vesical.volume||'N/I'} ${form.elims.vesical.ml ? '('+form.elims.vesical.ml+')' : ''}\n`;
+                    if (hasIntestinal) text += `- Intestinal: ${form.elims.intestinal.via||'N/I'} | Aspecto: ${form.elims.intestinal.aspecto||'N/I'} | Freq: ${form.elims.intestinal.freq||'N/I'}\n`;
                     text += `\n`;
                 }
 
