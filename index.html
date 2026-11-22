@@ -80,7 +80,8 @@
             ClipboardCopy: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
             Check: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
             Lock: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-            Droplets: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+            Droplets: ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+            Sparkles: ({size=16}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
         };
 
         const ChartComponent = ({ type, data, options, height = "100%" }) => {
@@ -385,7 +386,7 @@
         };
 
         // =====================================================================
-        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (V42 - UTI & FAST-CLICK PRO)
+        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (V42 - SUGESTÃO INTELIGENTE)
         // =====================================================================
         const InputField = ({ label, value, onChange, placeholder='' }) => (
             <div className="w-full mb-3">
@@ -463,22 +464,135 @@
                 const t = vals.reduce((a,b)=>(a||0)+(b||0),0); return {t, d: t>34?"Intensivos":t>=30?"Semi-Int.":t>=24?"Alta Dep.":t>=18?"Intermediários":"Mínimos"}; 
             }, [form.escalas.fugulin]);
 
-            const toggleElim = (tipo, campo, val) => {
-                setForm(prev => ({ ...prev, elims: { ...prev.elims, [tipo]: { ...prev.elims[tipo], [campo]: prev.elims[tipo][campo] === val ? '' : val } } }));
-            };
+            // MOTOR DE SUGESTÕES INTELIGENTES BASEADAS NO EXAME OBJETIVO (O) E DIAGNÓSTICOS (I)
+            const smartSuggestions = useMemo(() => {
+                const list = new Set();
+                const geral = form.exame['Geral'] || [];
+                const obsLower = (form.exameObs || '').toLowerCase();
+                const diagsLower = form.diagnosticos.join(' ').toLowerCase();
+                const tempVal = parseFloat((form.sv.temp || '').replace(',', '.'));
+                const spo2Val = parseFloat((form.sv.spo2 || '').replace(',', '.'));
+                const hgtVal = parseFloat((form.sv.hgt || '').replace(',', '.'));
+                const evaVal = parseFloat((form.sv.eva || '').replace(',', '.'));
 
-            const ElimButtonGroup = ({ label, options, tipo, campo }) => (
-                <div className="mb-3">
-                    <div className="text-[9px] text-slate-500 uppercase font-bold mb-1.5">{label}</div>
-                    <div className="flex flex-wrap gap-1.5">
-                        {options.map(o => (
-                            <button key={o} onClick={() => toggleElim(tipo, campo, o)} className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${form.elims[tipo][campo] === o ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-700/50 hover:text-slate-200'}`}>
-                                {o}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            );
+                // Sinais Vitais
+                if (!isNaN(tempVal) && tempVal >= 37.8) {
+                    list.add("Monitorar curva térmica rigorosamente, aplicar medidas físicas de resfriamento e administrar antitérmicos conforme prescrição médica.");
+                }
+                if (!isNaN(tempVal) && tempVal > 0 && tempVal < 36.0) {
+                    list.add("Instituir medidas de aquecimento ativo/passivo (mantas térmicas/cobertores) e monitorar temperatura axilar.");
+                }
+                if (!isNaN(spo2Val) && spo2Val > 0 && spo2Val < 94) {
+                    list.add("Monitorar oximetria de pulso contínua, avaliar padrão respiratório e otimizar oxigenoterapia conforme prescrição.");
+                }
+                if ((!isNaN(evaVal) && evaVal > 0) || diagsLower.includes('dor')) {
+                    list.add("Reavaliar escala de dor (EVA) periodicamente, aplicar medidas não farmacológicas de conforto e administrar analgesia conforme prescrição.");
+                }
+                if ((!isNaN(hgtVal) && (hgtVal < 70 || hgtVal > 180)) || diagsLower.includes('glicemia')) {
+                    list.add("Realizar controle rigoroso de glicemia capilar conforme protocolo institucional e comunicar variações extremas.");
+                }
+
+                // Escalas Técnicas
+                if ((glasgowCalc.t > 0 && glasgowCalc.t <= 13) || geral.includes("Interação Reduzida") || geral.includes("Sonolento")) {
+                    list.add("Manter vigilância neurológica rigorosa, avaliando nível de consciência, reatividade pupilar e resposta motora.");
+                }
+                if ((bradenCalc.t > 0 && bradenCalc.t <= 18) || geral.includes("Pele Friável") || diagsLower.includes('pressão') || diagsLower.includes('pele')) {
+                    list.add("Manter medidas de prevenção de lesão por pressão, incluindo mudanças de decúbito 2/2h conforme tolerância clínica, alívio de proeminências ósseas e hidratação cutânea.");
+                }
+                if ((morseCalc.t >= 25) || diagsLower.includes('queda')) {
+                    list.add("Manter medidas de prevenção de quedas (grades elevadas, leito travado e campainha ao alcance) e prevenção de eventos adversos.");
+                }
+
+                // Exame Físico e Achados Clínicos
+                if (geral.includes("Dispnéico") || diagsLower.includes('respirat') || diagsLower.includes('gases')) {
+                    list.add("Avaliar ausculta pulmonar, frequência, ritmo e esforço respiratório, mantendo cabeceira elevada.");
+                }
+                if (geral.includes("Edema Periférico") || obsLower.includes("edema")) {
+                    list.add("Avaliar evolução de edema periférico, perfusão tissular distal e realizar controle rigoroso do balanço hídrico.");
+                }
+                if (geral.includes("Pele Friável") || obsLower.includes("lesão") || obsLower.includes("lesao") || obsLower.includes("hematoma") || obsLower.includes("ferida") || obsLower.includes("úlcera") || obsLower.includes("ulcera")) {
+                    list.add("Avaliar e monitorar lesões cutâneas/hematomas quanto à extensão, aspecto, exsudato e sinais de infecção, realizando proteção local e evitando fricção ou trauma.");
+                }
+                if (obsLower.includes("rabdomi") || obsLower.includes("compartimental") || obsLower.includes("mialgia")) {
+                    list.add("Observar sinais de síndrome compartimental (dor desproporcional, aumento de tensão muscular e alterações neurovasculares) e monitorar alterações eletrolíticas/ECG.");
+                }
+                if (geral.includes("Abdome Flácido") || obsLower.includes("abdome") || obsLower.includes("globoso") || obsLower.includes("distendido")) {
+                    list.add("Avaliar distensão e perímetro abdominal, ruídos hidroaéreos, aceitação alimentar e padrão de eliminação intestinal.");
+                }
+
+                // Terapias e Infusões
+                if (form.terapias.includes("Em hemotransfusão (CHAD)")) {
+                    list.add("Acompanhar hemotransfusão conforme prescrição médica, monitorando sinais vitais e possíveis manifestações de reação transfusional.");
+                }
+                if (form.terapias.includes("Em uso de DVA")) {
+                    list.add("Monitorar infusão contínua de drogas vasoativas (DVA) em bomba de infusão, avaliando pressão arterial, frequência cardíaca e perfusão periférica.");
+                }
+                if (form.terapias.includes("Sedação contínua")) {
+                    list.add("Avaliar nível de sedação (escala RASS), reflexos protetores de via aérea e realizar cuidados oculares.");
+                }
+                if (form.terapias.includes("Dieta enteral contínua") || form.sondasDrenos.some(s => s.tipo.toUpperCase().includes("SNE"))) {
+                    list.add("Manter dieta enteral conforme prescrição em bomba de infusão com cabeceira elevada (30° a 45°), observando tolerância gastrointestinal e glicemia capilar.");
+                }
+                if (form.terapias.includes("Hidratação venosa contínua")) {
+                    list.add("Administrar hidratação venosa conforme prescrição médica, monitorando resposta clínica e balanço hídrico.");
+                }
+
+                // Invasivos e Drenos
+                form.vasculares.forEach(v => {
+                    const tUp = (v.tipo || '').toUpperCase();
+                    if (tUp.includes("CVC") || tUp.includes("PICC") || tUp.includes("PAI")) {
+                        list.add(`Manter cuidados com ${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}, avaliando sítio de inserção, integridade do curativo estéril, conexões e permeabilidade dos lúmens.`);
+                    } else {
+                        list.add(`Avaliar condições do acesso venoso (${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}), observando fixação, permeabilidade e sinais flogísticos.`);
+                    }
+                });
+
+                form.viasAereas.forEach(va => {
+                    const vaUp = (va.tipo || '').toUpperCase();
+                    if (vaUp.includes("TQT") || vaUp.includes("TOT") || vaUp.includes("VMI")) {
+                        list.add(`Manter vigilância da adaptação à ventilação mecânica e cuidados com ${va.tipo}, incluindo checagem de fixação, pressão de cuff e aspiração conforme necessidade.`);
+                    } else {
+                        list.add(`Manter cuidados e umidificação com dispositivo de oxigenoterapia (${va.tipo}), avaliando integridade cutânea local.`);
+                    }
+                });
+
+                form.sondasDrenos.forEach(sd => {
+                    if (!(sd.tipo || '').toUpperCase().includes("SNE")) {
+                        list.add(`Manter cuidados com ${sd.tipo}, observando permeabilidade, fixação, aspecto e volume drenado.`);
+                    }
+                });
+
+                // Eliminações Fisiológicas
+                if (form.elims.vesical.via === 'SVD' || form.elims.vesical.via === 'SVA' || form.elims.vesical.via === 'Urostomia') {
+                    list.add(`Manter cuidados com dispositivo urinário (${form.elims.vesical.via}), garantindo fixação adequada, sistema fechado abaixo do nível da bexiga e higiene íntima rigorosa.`);
+                }
+                if (form.elims.vesical.volume || form.elims.vesical.ml || ['Concentrado', 'Colúrico', 'Hematúrico', 'Piúrico'].includes(form.elims.vesical.aspecto)) {
+                    list.add("Realizar controle rigoroso da diurese e do balanço hídrico, observando características da urina, alterações de coloração e redução do débito urinário.");
+                }
+                if (['Líquida/Diarreia', 'Melena', 'Enterorragia'].includes(form.elims.intestinal.aspecto) || form.elims.intestinal.via === 'Fralda') {
+                    list.add("Monitorar frequência e aspecto das evacuações, realizando higiene íntima pronta e proteção da pele perianal.");
+                }
+                if ((form.elims.intestinal.freq || '').includes('Ausente')) {
+                    list.add("Acompanhar padrão de eliminação intestinal, ruídos hidroaéreos e distensão abdominal.");
+                }
+
+                return Array.from(list);
+            }, [form, glasgowCalc, bradenCalc, morseCalc]);
+
+            const condutasGeraisList = [
+                "Manter monitorização hemodinâmica, respiratória e neurológica contínua.",
+                "Manter medidas de prevenção de infecções relacionadas à assistência à saúde (IRAS).",
+                "Monitorar temperatura corporal e sinais sugestivos de infecção.",
+                "Manter medidas de segurança do paciente e prevenção de quedas e eventos adversos.",
+                "Comunicar prontamente alterações clínicas, intercorrências e resultados laboratoriais críticos à equipe médica e multiprofissional."
+            ];
+
+            const applyAllSuggestions = () => {
+                setForm(prev => ({
+                    ...prev,
+                    condutas: Array.from(new Set([...prev.condutas, ...smartSuggestions]))
+                }));
+            };
 
             const generateText = () => {
                 if (activeTab === 'ADMISSAO') {
@@ -582,19 +696,6 @@
             const toggleTerapia = (val) => { setForm(p => ({...p, terapias: p.terapias.includes(val) ? p.terapias.filter(x=>x!==val) : [...p.terapias, val]})); };
             const appendSubjetivo = (frase) => { setForm(p => ({...p, subjetivo: p.subjetivo ? `${p.subjetivo} ${frase}` : frase})); };
 
-            const condutasRapidasList = [
-                "Manter monitorização hemodinâmica, respiratória e neurológica contínua.",
-                "Avaliar condições do acesso venoso, observando fixação, permeabilidade e sinais flogísticos.",
-                "Manter vigilância da adaptação à ventilação mecânica e cuidados com via aérea (TOT/TQT).",
-                "Realizar controle rigoroso da diurese e do balanço hídrico.",
-                "Observar características da urina, alterações de coloração e débito urinário.",
-                "Manter dieta enteral conforme prescrição, observando tolerância gastrointestinal e glicemia capilar.",
-                "Acompanhar hemotransfusão conforme prescrição médica, monitorando sinais vitais e reações transfusionais.",
-                "Manter medidas de prevenção de lesão por pressão, incluindo mudanças de decúbito 2/2h conforme tolerância.",
-                "Manter medidas de prevenção de quedas, grades elevadas e segurança do paciente.",
-                "Comunicar prontamente alterações clínicas e laboratoriais à equipe médica."
-            ];
-
             return (
                 <div className="flex flex-col lg:flex-row h-full gap-6 animate-fade">
                     <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
@@ -685,7 +786,7 @@
                                                 
                                                 {openScale === 'glasgow' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="orange" label={titlesGlasgow.o} options={glasgowFull.o} values={[4,3,2,1]} value={form.escalas.glasgow.o} onChange={v=>setForm({...form,escalas:{...form.escalas,glasgow:{...form.escalas.glasgow,o:v}}})}/> <CalcScaleRadio color="orange" label={titlesGlasgow.v} options={glasgowFull.v} values={[5,4,3,2,1]} value={form.escalas.glasgow.v} onChange={v=>setForm({...form,escalas:{...form.escalas,glasgow:{...form.escalas.glasgow,v:v}}})}/> <CalcScaleRadio color="orange" label={titlesGlasgow.m} options={glasgowFull.m} values={[6,5,4,3,2,1]} value={form.escalas.glasgow.m} onChange={v=>setForm({...form,escalas:{...form.escalas,glasgow:{...form.escalas.glasgow,m:v}}})}/></div>}
                                                 {openScale === 'braden' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={form.escalas.braden[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,braden:{...form.escalas.braden,[k]:v}}})}/>)}</div>}
-                                                {openScale === 'morse' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setEscalas({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
+                                                {openScale === 'morse' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
                                                 {openScale === 'fugulin' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={form.escalas.fugulin[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,fugulin:{...form.escalas.fugulin,[k]:v}}})}/>)}</div>}
                                             </div>
                                             
@@ -757,13 +858,35 @@
                                     )}
                                     {activeSection === 'C' && (
                                         <div className="space-y-6">
+                                            {smartSuggestions.length > 0 && (
+                                                <div className="bg-slate-800 p-5 rounded-xl border border-emerald-500/40 shadow-sm">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
+                                                        <div className="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
+                                                            <Icons.Sparkles size={16}/> Sugestões Inteligentes ({smartSuggestions.length} encontradas pelo Exame Objetivo)
+                                                        </div>
+                                                        <button onClick={applyAllSuggestions} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shadow">
+                                                            + Aplicar Todas
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        {smartSuggestions.map(c => (
+                                                            <button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`text-left px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all border ${form.condutas.includes(c)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-800'}`}>
+                                                                {form.condutas.includes(c) ? '✓ ' : '+ '}{c}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                                <div className="text-[10px] font-bold uppercase text-emerald-500 mb-4">Condutas Rápidas (Clique para adicionar/remover)</div>
+                                                <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Condutas Gerais e Rotina Institucional</div>
                                                 <div className="flex flex-col gap-2">
-                                                    {condutasRapidasList.map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`text-left px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{c}</button>)}
+                                                    {condutasGeraisList.map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`text-left px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all border ${form.condutas.includes(c)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>
+                                                        {form.condutas.includes(c) ? '✓ ' : '+ '}{c}
+                                                    </button>)}
                                                 </div>
                                             </div>
-                                            <TextAreaField label="Notas e Cuidados Específicos Adicionais" h="h-36" value={form.obs} onChange={v=>setForm({...form, obs:v})} placeholder="Insira aqui condutas específicas do caso (ex: vigilância de síndrome compartimental, curativo local em MID...)" />
+                                            <TextAreaField label="Notas e Cuidados Específicos Adicionais" h="h-36" value={form.obs} onChange={v=>setForm({...form, obs:v})} placeholder="Insira aqui condutas específicas adicionais do paciente..." />
                                         </div>
                                     )}
                                 </div>
