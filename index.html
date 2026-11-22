@@ -225,7 +225,7 @@
                 bh: { peso: '', horas: '', febre: null, taquipneia: null, sudorese: null, ventMech: null } 
             };
             const [escalas, setEscalas] = useState(initialState);
-            const [activeTab, setActiveTab] = useState('GLASGOW'); // GLASGOW | BRADEN | MORSE | FUGULIN | BH
+            const [activeTab, setActiveTab] = useState('GLASGOW');
 
             const glasgowCalc = useMemo(() => { 
                 const g=escalas.glasgow; if(g.o===null && g.v===null && g.m===null) return {t: 0, r: "Pendente"};
@@ -385,7 +385,7 @@
         };
 
         // =====================================================================
-        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO
+        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (V42 - UTI & FAST-CLICK PRO)
         // =====================================================================
         const InputField = ({ label, value, onChange, placeholder='' }) => (
             <div className="w-full mb-3">
@@ -426,7 +426,7 @@
             const initialSoicState = {
                 adm: { procedencia: '', acompanhante: '', queixa: '', hpp: '' },
                 subjetivo: '', sv: { pa: '', fc: '', fr: '', temp: '', spo2: '', hgt: '', eva: '' },
-                exame: {}, vasculares: [], viasAereas: [], sondasDrenos: [], diagnosticos: [],
+                exame: {}, exameObs: '', terapias: [], vasculares: [], viasAereas: [], sondasDrenos: [], diagnosticos: [],
                 interpretacao: '', condutas: [], obs: '',
                 elims: { vesical: {via:'', aspecto:'', volume:'', ml:''}, intestinal: {via:'', aspecto:'', freq:''} },
                 escalas: { 
@@ -481,56 +481,119 @@
             );
 
             const generateText = () => {
-                if (activeTab === 'ADMISSAO') return `ADMISSÃO ENFERMAGEM - HACO\n----------------------------------\n[HISTÓRICO]\nProcedência: ${form.adm.procedencia||'--'}\nAcompanhante: ${form.adm.acompanhante||'--'}\nQueixa Principal: ${form.adm.queixa||'--'}\nHPP e Alergias: ${form.adm.hpp||'--'}\n\n[SINAIS VITAIS ENTRADA]\nPA: ${form.sv.pa||'-'} | FC: ${form.sv.fc||'-'} | FR: ${form.sv.fr||'-'}\nT: ${form.sv.temp||'-'} | Sat: ${form.sv.spo2||'-'}% | HGT: ${form.sv.hgt||'-'}\nDor (EVA): ${form.sv.eva||'-'}\n----------------------------------\n[Resolução 736/2024 - GT SAE HACO]`;
+                if (activeTab === 'ADMISSAO') {
+                    let admText = `ADMISSÃO ENFERMAGEM - HACO\n----------------------------------\n[HISTÓRICO]\nProcedência: ${form.adm.procedencia||'--'}\nAcompanhante: ${form.adm.acompanhante||'--'}\nQueixa Principal: ${form.adm.queixa||'--'}\nHPP e Alergias: ${form.adm.hpp||'--'}`;
+                    const svParts = [];
+                    if (form.sv.pa) svParts.push(`PA: ${form.sv.pa}`);
+                    if (form.sv.fc) svParts.push(`FC: ${form.sv.fc}`);
+                    if (form.sv.fr) svParts.push(`FR: ${form.sv.fr}`);
+                    if (form.sv.temp) svParts.push(`T: ${form.sv.temp}`);
+                    if (form.sv.spo2) svParts.push(`Sat: ${form.sv.spo2}%`);
+                    if (form.sv.hgt) svParts.push(`HGT: ${form.sv.hgt}`);
+                    if (form.sv.eva) svParts.push(`Dor (EVA): ${form.sv.eva}`);
+                    if (svParts.length > 0) admText += `\n\n[SINAIS VITAIS ENTRADA]\n${svParts.join(' | ')}`;
+                    return admText + `\n----------------------------------\n[Resolução 736/2024 - GT SAE HACO]`;
+                }
                 if (activeTab === 'ALTA') return `ALTA DE ENFERMAGEM - HACO\n----------------------------------\n- Condições de Alta: ${form.alta.condicoes||'--'}\n- Destino da Alta: ${form.alta.destino||'--'}\n- Orientações Fornecidas: ${form.alta.orientacoes||'--'}\n----------------------------------\nPaciente ciente.`;
                 
-                let text = `S: ${form.subjetivo || 'Paciente estável, sem queixas intercorrentes.'}\n\n`;
-                text += `O: [SINAIS VITAIS]\nPA: ${form.sv.pa||'-'} | FC: ${form.sv.fc||'-'} | FR: ${form.sv.fr||'-'} | T: ${form.sv.temp||'-'} | Sat: ${form.sv.spo2||'-'}% | EVA: ${form.sv.eva||'-'}\n\n`;
+                let text = `S: ${form.subjetivo || 'Paciente sem queixas no período.'}\n\n`;
+                text += `O: `;
                 
-                text += `[ESCALAS TÉCNICAS]\n`;
-                text += `- Glasgow: ${glasgowCalc.t > 0 ? glasgowCalc.t : '-'} (${glasgowCalc.r})\n`;
-                text += `- Braden: ${bradenCalc.t > 0 ? bradenCalc.t : '-'} (${bradenCalc.r})\n`;
-                text += `- Morse: ${morseCalc.t > 0 ? morseCalc.t : '-'} (${morseCalc.r})\n`;
-                text += `- Fugulin: ${fugulinCalc.t > 0 ? fugulinCalc.t : '-'} (${fugulinCalc.d})\n\n`;
-                
-                let temExame = false;
-                Object.entries(form.exame).forEach(([cat, vals]) => { if(vals.length>0) { text += `- ${cat}: ${vals.join(', ')}\n`; temExame = true; }});
-                if(temExame) text += '\n';
+                const svParts = [];
+                if (form.sv.pa) svParts.push(`PA: ${form.sv.pa}`);
+                if (form.sv.fc) svParts.push(`FC: ${form.sv.fc}`);
+                if (form.sv.fr) svParts.push(`FR: ${form.sv.fr}`);
+                if (form.sv.temp) svParts.push(`T: ${form.sv.temp}`);
+                if (form.sv.spo2) svParts.push(`Sat: ${form.sv.spo2}%`);
+                if (form.sv.hgt) svParts.push(`HGT: ${form.sv.hgt}`);
+                if (form.sv.eva) svParts.push(`EVA: ${form.sv.eva}`);
+
+                let oBlocks = [];
+                if (svParts.length > 0) {
+                    oBlocks.push(`[SINAIS VITAIS]\n${svParts.join(' | ')}`);
+                }
+
+                const scaleLines = [];
+                if (glasgowCalc.t > 0) scaleLines.push(`- Glasgow: ${glasgowCalc.t} (${glasgowCalc.r})`);
+                if (bradenCalc.t > 0) scaleLines.push(`- Braden: ${bradenCalc.t} (${bradenCalc.r})`);
+                if (morseCalc.t > 0) scaleLines.push(`- Morse: ${morseCalc.t} (${morseCalc.r})`);
+                if (fugulinCalc.t > 0) scaleLines.push(`- Fugulin: ${fugulinCalc.t} (${fugulinCalc.d})`);
+                if (scaleLines.length > 0) {
+                    oBlocks.push(`[ESCALAS TÉCNICAS]\n${scaleLines.join('\n')}`);
+                }
+
+                let exameLines = [];
+                Object.entries(form.exame).forEach(([cat, vals]) => { 
+                    if(vals.length > 0) exameLines.push(`- ${cat}: ${vals.join(', ')}`); 
+                });
+                if (form.exameObs && form.exameObs.trim()) {
+                    exameLines.push(`- Achados Clínicos: ${form.exameObs.trim()}`);
+                }
+                if (form.terapias.length > 0) {
+                    exameLines.push(`- Terapias / Infusões: ${form.terapias.join(', ')}`);
+                }
+                if (exameLines.length > 0) {
+                    oBlocks.push(exameLines.join('\n'));
+                }
 
                 const hasVesical = form.elims.vesical.via || form.elims.vesical.aspecto || form.elims.vesical.volume || form.elims.vesical.ml;
                 const hasIntestinal = form.elims.intestinal.via || form.elims.intestinal.aspecto || form.elims.intestinal.freq;
-
                 if (hasVesical || hasIntestinal) {
-                    text += `[ELIMINAÇÕES FISIOLÓGICAS]\n`;
+                    let elimLines = [`[ELIMINAÇÕES FISIOLÓGICAS]`];
                     if (hasVesical) {
-                        text += `- Vesical: ${form.elims.vesical.via||'N/I'} | Aspecto: ${form.elims.vesical.aspecto||'N/I'} | Vol: ${form.elims.vesical.volume||'N/I'} ${form.elims.vesical.ml ? '('+form.elims.vesical.ml+')' : ''}\n`;
+                        const vParts = [];
+                        if (form.elims.vesical.via) vParts.push(form.elims.vesical.via);
+                        if (form.elims.vesical.aspecto) vParts.push(`Aspecto: ${form.elims.vesical.aspecto}`);
+                        if (form.elims.vesical.volume || form.elims.vesical.ml) vParts.push(`Vol: ${[form.elims.vesical.volume, form.elims.vesical.ml ? `(${form.elims.vesical.ml})` : ''].filter(Boolean).join(' ')}`);
+                        elimLines.push(`- Vesical: ${vParts.join(' | ')}`);
                     }
                     if (hasIntestinal) {
-                        text += `- Intestinal: ${form.elims.intestinal.via||'N/I'} | Aspecto: ${form.elims.intestinal.aspecto||'N/I'} | Freq: ${form.elims.intestinal.freq||'N/I'}\n`;
+                        const iParts = [];
+                        if (form.elims.intestinal.via) iParts.push(form.elims.intestinal.via);
+                        if (form.elims.intestinal.aspecto) iParts.push(`Aspecto: ${form.elims.intestinal.aspecto}`);
+                        if (form.elims.intestinal.freq) iParts.push(`Freq: ${form.elims.intestinal.freq}`);
+                        elimLines.push(`- Intestinal: ${iParts.join(' | ')}`);
                     }
-                    text += `\n`;
+                    oBlocks.push(elimLines.join('\n'));
                 }
 
                 if (form.vasculares.length > 0 || form.viasAereas.length > 0 || form.sondasDrenos.length > 0) {
-                    text += `[INVASIVOS E DRENOS]\n`;
-                    form.vasculares.forEach(v => text += `- Acesso: ${v.tipo} em ${v.sitio} (${v.obs})\n`);
-                    form.viasAereas.forEach(va => text += `- Via Aérea: ${va.tipo} (Fixação: ${va.fixacao}cm)\n`);
-                    form.sondasDrenos.forEach(e => text += `- Dreno/Sonda: ${e.tipo} | Asp: ${e.aspecto} | Débito: ${e.debito}ml\n`);
-                    text += '\n';
+                    let invLines = [`[INVASIVOS E DRENOS]`];
+                    form.vasculares.forEach(v => invLines.push(`- Acesso: ${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}${v.obs ? ' (' + v.obs + ')' : ''}`));
+                    form.viasAereas.forEach(va => invLines.push(`- Via Aérea: ${va.tipo}${va.fixacao ? ' (Fixação: ' + va.fixacao + 'cm)' : ''}`));
+                    form.sondasDrenos.forEach(e => invLines.push(`- Dreno/Sonda: ${e.tipo}${e.aspecto ? ' | Asp: ' + e.aspecto : ''}${e.debito ? ' | Débito: ' + e.debito + 'ml' : ''}`));
+                    oBlocks.push(invLines.join('\n'));
                 }
+
+                text += (oBlocks.length > 0 ? oBlocks.join('\n\n') : 'Sem alterações objetivas registradas.') + '\n\n';
 
                 text += `I: [NANDA-I]\n`;
                 if(form.diagnosticos.length>0) form.diagnosticos.forEach(d => text += `- ${d}\n`); else text += `- Sem novos diagnósticos prioritários.\n`;
                 text += `Raciocínio Clínico: ${form.interpretacao || 'Manutenção do quadro atual.'}\n\n`;
                 
                 text += `C: [PLANO DE CUIDADOS E CONDUTAS]\n`;
-                if(form.condutas.length>0) form.condutas.forEach(c => text += `- ${c}\n`); else text += `- Manter cuidados de rotina.\n`;
-                text += `- Notas: ${form.obs || 'Sem observações adicionais.'}\n\n`;
-                return text + `[Resolução COFEN 736/2024 - GT SAE HACO]`;
+                if(form.condutas.length>0) form.condutas.forEach(c => text += `     ${c}\n`); else text += `     Manter cuidados de enfermagem de rotina e vigilância clínica.\n`;
+                if (form.obs && form.obs.trim()) text += `     ${form.obs.trim()}\n`;
+                return text + `\n[Resolução COFEN 736/2024 - GT SAE HACO]`;
             };
 
             const copyAghuse = () => { navigator.clipboard.writeText(generateText()); setCopySuccess(true); setTimeout(()=>setCopySuccess(false), 2000); };
             const toggleExame = (cat, val) => { const c = form.exame[cat]||[]; setForm({...form, exame: {...form.exame, [cat]: c.includes(val)?c.filter(x=>x!==val):[...c, val]}}); };
+            const toggleTerapia = (val) => { setForm(p => ({...p, terapias: p.terapias.includes(val) ? p.terapias.filter(x=>x!==val) : [...p.terapias, val]})); };
+            const appendSubjetivo = (frase) => { setForm(p => ({...p, subjetivo: p.subjetivo ? `${p.subjetivo} ${frase}` : frase})); };
+
+            const condutasRapidasList = [
+                "Manter monitorização hemodinâmica, respiratória e neurológica contínua.",
+                "Avaliar condições do acesso venoso, observando fixação, permeabilidade e sinais flogísticos.",
+                "Manter vigilância da adaptação à ventilação mecânica e cuidados com via aérea (TOT/TQT).",
+                "Realizar controle rigoroso da diurese e do balanço hídrico.",
+                "Observar características da urina, alterações de coloração e débito urinário.",
+                "Manter dieta enteral conforme prescrição, observando tolerância gastrointestinal e glicemia capilar.",
+                "Acompanhar hemotransfusão conforme prescrição médica, monitorando sinais vitais e reações transfusionais.",
+                "Manter medidas de prevenção de lesão por pressão, incluindo mudanças de decúbito 2/2h conforme tolerância.",
+                "Manter medidas de prevenção de quedas, grades elevadas e segurança do paciente.",
+                "Comunicar prontamente alterações clínicas e laboratoriais à equipe médica."
+            ];
 
             return (
                 <div className="flex flex-col lg:flex-row h-full gap-6 animate-fade">
@@ -583,7 +646,26 @@
                                         ].map(s=><button key={s.id} onClick={()=>setActiveSection(s.id)} className={`flex-1 min-w-[110px] py-2.5 rounded-lg text-[11px] font-black transition-all ${activeSection===s.id?'bg-emerald-600 text-white shadow-md':'text-slate-400 hover:bg-slate-700/50 hover:text-slate-300'}`}>{s.label}</button>)}
                                     </div>
                                     
-                                    {activeSection === 'S' && <TextAreaField label="Relato Subjetivo / Queixas" h="h-64" value={form.subjetivo} onChange={v=>setForm({...form, subjetivo:v})} />}
+                                    {activeSection === 'S' && (
+                                        <div className="space-y-4">
+                                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                                <div className="text-[10px] font-bold uppercase text-emerald-400 mb-3">Inserção Rápida (Subjetivo)</div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {[
+                                                        "Paciente sem queixas no período.",
+                                                        "Refere melhora do quadro álgico.",
+                                                        "Apresenta interação reduzida, limitando a obtenção de informações subjetivas.",
+                                                        "Paciente sob sedação / VMI, impossibilitado de verbalizar queixas."
+                                                    ].map(f => (
+                                                        <button key={f} onClick={() => appendSubjetivo(f)} className="px-3 py-2 rounded-lg text-[10px] font-bold bg-slate-900 border border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-white transition-colors text-left">
+                                                            + {f}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <TextAreaField label="Relato Subjetivo / Queixas" h="h-48" value={form.subjetivo} onChange={v=>setForm({...form, subjetivo:v})} placeholder="Clique nas opções acima ou digite as queixas relatadas..." />
+                                        </div>
+                                    )}
                                     
                                     {activeSection === 'O' && (
                                         <div className="space-y-6">
@@ -603,13 +685,20 @@
                                                 
                                                 {openScale === 'glasgow' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="orange" label={titlesGlasgow.o} options={glasgowFull.o} values={[4,3,2,1]} value={form.escalas.glasgow.o} onChange={v=>setForm({...form,escalas:{...form.escalas,glasgow:{...form.escalas.glasgow,o:v}}})}/> <CalcScaleRadio color="orange" label={titlesGlasgow.v} options={glasgowFull.v} values={[5,4,3,2,1]} value={form.escalas.glasgow.v} onChange={v=>setForm({...form,escalas:{...form.escalas,glasgow:{...form.escalas.glasgow,v:v}}})}/> <CalcScaleRadio color="orange" label={titlesGlasgow.m} options={glasgowFull.m} values={[6,5,4,3,2,1]} value={form.escalas.glasgow.m} onChange={v=>setForm({...form,escalas:{...form.escalas,glasgow:{...form.escalas.glasgow,m:v}}})}/></div>}
                                                 {openScale === 'braden' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(bradenFull).map(([k,opts])=><CalcScaleRadio key={k} color="blue" label={titlesBraden[k]} options={opts} value={form.escalas.braden[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,braden:{...form.escalas.braden,[k]:v}}})}/>)}</div>}
-                                                {openScale === 'morse' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
+                                                {openScale === 'morse' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade"><CalcScaleRadio color="purple" label="Histórico de Quedas" options={morseFull.h} values={[0,25]} value={form.escalas.morse.h} onChange={v=>setEscalas({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,h:v}}})}/> <CalcScaleRadio color="purple" label="Diagnóstico Secundário" options={morseFull.d} values={[0,15]} value={form.escalas.morse.d} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,d:v}}})}/> <CalcScaleRadio color="purple" label="Auxílio na Deambulação" options={morseFull.a} values={[0,15,30]} value={form.escalas.morse.a} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,a:v}}})}/> <CalcScaleRadio color="purple" label="Terapia Endovenosa" options={morseFull.t} values={[0,20]} value={form.escalas.morse.t} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,t:v}}})}/> <CalcScaleRadio color="purple" label="Marcha" options={morseFull.m} values={[0,10,20]} value={form.escalas.morse.m} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,m:v}}})}/> <CalcScaleRadio color="purple" label="Estado Mental" options={morseFull.e} values={[0,15]} value={form.escalas.morse.e} onChange={v=>setForm({...form,escalas:{...form.escalas,morse:{...form.escalas.morse,e:v}}})}/></div>}
                                                 {openScale === 'fugulin' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-700 animate-fade">{Object.entries(fugulinFull).map(([k,opts])=><CalcScaleRadio key={k} color="emerald" label={titlesFugulin[k]} options={opts} value={form.escalas.fugulin[k]} onChange={v=>setForm({...form,escalas:{...form.escalas,fugulin:{...form.escalas.fugulin,[k]:v}}})}/>)}</div>}
                                             </div>
                                             
-                                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                                <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Exame Físico Rápido</div>
-                                                <div className="flex flex-wrap gap-2">{["LOTE", "Sonolento", "Eupnéico", "Dispnéico", "MV+ sem RA", "BRNF", "Pele Íntegra", "Descorado", "Edema", "Pupilas Isocóricas"].map(o=><button key={o} onClick={()=>toggleExame('Geral',o)} className={`px-4 py-2 rounded-lg text-[10px] font-bold border transition-colors ${form.exame['Geral']?.includes(o)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{o}</button>)}</div>
+                                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
+                                                <div className="text-[10px] font-bold uppercase text-blue-400">Exame Físico Rápido</div>
+                                                <div className="flex flex-wrap gap-2">{["LOTE", "Interação Reduzida", "Sonolento", "Eupnéico", "Dispnéico", "MV+ sem RA", "BRNF", "Hemodinamicamente Estável", "Extremidades Aquecidas", "Pele Íntegra", "Pele Friável", "Descorado", "Edema Periférico", "Abdome Flácido", "Pupilas Isocóricas"].map(o=><button key={o} onClick={()=>toggleExame('Geral',o)} className={`px-3 py-2 rounded-lg text-[10px] font-bold border transition-colors ${form.exame['Geral']?.includes(o)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{o}</button>)}</div>
+                                                <div className="pt-2">
+                                                    <InputField label="Complemento / Achados Específicos do Exame Físico" placeholder="Ex: Edema 1+/4+ em MMSS, hematoma palpebral à esquerda, lesão superficial em MID..." value={form.exameObs} onChange={v=>setForm({...form, exameObs:v})}/>
+                                                </div>
+                                                <div className="pt-2 border-t border-slate-700/60">
+                                                    <div className="text-[9px] font-bold uppercase text-slate-500 mb-2">Terapias e Infusões em Curso</div>
+                                                    <div className="flex flex-wrap gap-2">{["Sem uso de DVAs", "Em uso de DVA", "Sem sedação no momento", "Sedação contínua", "Dieta enteral contínua", "Dieta zero", "Em hemotransfusão (CHAD)", "Hidratação venosa contínua"].map(t=><button key={t} onClick={()=>toggleTerapia(t)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${form.terapias.includes(t)?'bg-blue-600 border-blue-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800'}`}>{t}</button>)}</div>
+                                                </div>
                                             </div>
 
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
@@ -621,7 +710,7 @@
                                                         <ElimButtonGroup label="Aspecto" tipo="vesical" campo="aspecto" options={['Claro/Límpido', 'Concentrado', 'Colúrico', 'Hematúrico', 'Piúrico']} />
                                                         <ElimButtonGroup label="Volume/Débito" tipo="vesical" campo="volume" options={['Presente (Normal)', 'Anúria', 'Oligúria', 'Poliúria']} />
                                                         <div className="flex items-center gap-2 mt-2">
-                                                            <input className="w-24 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" placeholder="Ex: 500ml" value={form.elims.vesical.ml} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, ml: e.target.value}}})} />
+                                                            <input className="w-28 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" placeholder="Ex: 650ml/12h" value={form.elims.vesical.ml} onChange={e=>setForm({...form, elims:{...form.elims, vesical:{...form.elims.vesical, ml: e.target.value}}})} />
                                                             <span className="text-[10px] text-slate-500 font-bold uppercase">Volume Exato (Opcional)</span>
                                                         </div>
                                                     </div>
@@ -637,15 +726,18 @@
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Invasivos, Sondas e Drenos</div>
                                                 <div className="flex flex-wrap gap-2 mb-6">
-                                                    <button onClick={()=>setForm({...form, vasculares:[...form.vasculares,{id:Date.now(),tipo:'AVP',sitio:'',obs:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Acesso Vascular</button>
-                                                    <button onClick={()=>setForm({...form, viasAereas:[...form.viasAereas,{id:Date.now(),tipo:'O2 Cateter',fixacao:'',cuff:'',secrecao:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Via Aérea</button>
-                                                    <button onClick={()=>setForm({...form, sondasDrenos:[...form.sondasDrenos,{id:Date.now(),tipo:'Dreno de Portovac',debito:'',aspecto:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-4 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Outros Drenos/Sondas</button>
+                                                    <button onClick={()=>setForm({...form, vasculares:[...form.vasculares,{id:Date.now(),tipo:'AVP',sitio:'MSD',obs:'Pérvio, sem sinais flogísticos'}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ AVP</button>
+                                                    <button onClick={()=>setForm({...form, vasculares:[...form.vasculares,{id:Date.now(),tipo:'CVC Triplo Lúmen',sitio:'VJI Direita',obs:'Curativo limpo e seco, sem sinais flogísticos'}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ CVC</button>
+                                                    <button onClick={()=>setForm({...form, viasAereas:[...form.viasAereas,{id:Date.now(),tipo:'TQT em VMI (Modo Suporte)',fixacao:'',cuff:'',secrecao:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ TQT / VMI</button>
+                                                    <button onClick={()=>setForm({...form, viasAereas:[...form.viasAereas,{id:Date.now(),tipo:'TOT em VMI',fixacao:'22',cuff:'',secrecao:''}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ TOT / VMI</button>
+                                                    <button onClick={()=>setForm({...form, sondasDrenos:[...form.sondasDrenos,{id:Date.now(),tipo:'SNE (Dieta contínua)',debito:'',aspecto:'Pérvia, bem fixada'}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ SNE</button>
+                                                    <button onClick={()=>setForm({...form, sondasDrenos:[...form.sondasDrenos,{id:Date.now(),tipo:'Dreno',debito:'',aspecto:'Seroso'}]})} className="bg-slate-900 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">+ Dreno</button>
                                                 </div>
 
                                                 <div className="space-y-3">
-                                                    {form.vasculares.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Acesso (ex: AVP)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.sitio} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,sitio:e.target.value}:x)})} placeholder="Sítio (ex: MSE)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.obs} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,obs:e.target.value}:x)})} placeholder="Obs (Limpo/Pérvio)"/><button onClick={()=>setForm({...form,vasculares:form.vasculares.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
+                                                    {form.vasculares.map(v=><div key={v.id} className="flex flex-col sm:flex-row gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Acesso (ex: AVP / CVC)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.sitio} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,sitio:e.target.value}:x)})} placeholder="Sítio (ex: MSD / VJI D)"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.obs} onChange={e=>setForm({...form,vasculares:form.vasculares.map(x=>x.id===v.id?{...x,obs:e.target.value}:x)})} placeholder="Obs (Limpo/Pérvio)"/><button onClick={()=>setForm({...form,vasculares:form.vasculares.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors self-end sm:self-auto"><Icons.Trash size={16}/></button></div>)}
                                                     {form.viasAereas.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Via Aérea"/><input className="w-24 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" value={v.fixacao} onChange={e=>setForm({...form,viasAereas:form.viasAereas.map(x=>x.id===v.id?{...x,fixacao:e.target.value}:x)})} placeholder="Fixação(cm)"/><button onClick={()=>setForm({...form,viasAereas:form.viasAereas.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
-                                                    {form.sondasDrenos.map(v=><div key={v.id} className="flex gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Sonda/Dreno"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.aspecto} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,aspecto:e.target.value}:x)})} placeholder="Aspecto (ex: Seroso)"/><input className="w-28 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" value={v.debito} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,debito:e.target.value}:x)})} placeholder="Débito(ml)"/><button onClick={()=>setForm({...form,sondasDrenos:form.sondasDrenos.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Trash size={16}/></button></div>)}
+                                                    {form.sondasDrenos.map(v=><div key={v.id} className="flex flex-col sm:flex-row gap-2"><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.tipo} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,tipo:e.target.value}:x)})} placeholder="Sonda/Dreno"/><input className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 transition-colors" value={v.aspecto} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,aspecto:e.target.value}:x)})} placeholder="Aspecto / Vazão"/><input className="w-full sm:w-28 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 text-center transition-colors" value={v.debito} onChange={e=>setForm({...form,sondasDrenos:form.sondasDrenos.map(x=>x.id===v.id?{...x,debito:e.target.value}:x)})} placeholder="Débito(ml)"/><button onClick={()=>setForm({...form,sondasDrenos:form.sondasDrenos.filter(x=>x.id!==v.id)})} className="p-3 text-slate-500 hover:text-red-500 hover:bg-slate-900 rounded-lg transition-colors self-end sm:self-auto"><Icons.Trash size={16}/></button></div>)}
                                                 </div>
                                             </div>
                                         </div>
@@ -666,10 +758,12 @@
                                     {activeSection === 'C' && (
                                         <div className="space-y-6">
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                                <div className="text-[10px] font-bold uppercase text-emerald-500 mb-4">Condutas Rápidas</div>
-                                                <div className="flex flex-wrap gap-2 mb-4">{["Monitorar SSVV", "Troca de Decúbito 2/2h", "Controle Glicêmico", "Grades Elevadas", "Precaução de Contato", "Aspiração SOS", "Balanço Hídrico", "Mudança de Decúbito", "Curativo Estéril"].map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`px-4 py-2 rounded-lg text-[10px] font-bold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{c}</button>)}</div>
+                                                <div className="text-[10px] font-bold uppercase text-emerald-500 mb-4">Condutas Rápidas (Clique para adicionar/remover)</div>
+                                                <div className="flex flex-col gap-2">
+                                                    {condutasRapidasList.map(c=><button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`text-left px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all ${form.condutas.includes(c)?'bg-emerald-600 text-white shadow-md':'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}>{c}</button>)}
+                                                </div>
                                             </div>
-                                            <TextAreaField label="Notas e Cuidados Específicos" h="h-48" value={form.obs} onChange={v=>setForm({...form, obs:v})} />
+                                            <TextAreaField label="Notas e Cuidados Específicos Adicionais" h="h-36" value={form.obs} onChange={v=>setForm({...form, obs:v})} placeholder="Insira aqui condutas específicas do caso (ex: vigilância de síndrome compartimental, curativo local em MID...)" />
                                         </div>
                                     )}
                                 </div>
