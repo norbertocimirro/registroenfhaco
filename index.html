@@ -386,7 +386,7 @@
         };
 
         // =====================================================================
-        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (V42 - SUGESTÃO INTELIGENTE)
+        // MÓDULO ISOLADO: ASSISTENTE SOIC CLÍNICO (V43 - FIX + MOTOR COMPLETO)
         // =====================================================================
         const InputField = ({ label, value, onChange, placeholder='' }) => (
             <div className="w-full mb-3">
@@ -466,118 +466,130 @@
 
             // MOTOR DE SUGESTÕES INTELIGENTES BASEADAS NO EXAME OBJETIVO (O) E DIAGNÓSTICOS (I)
             const smartSuggestions = useMemo(() => {
-                const list = new Set();
+                const items = [];
+                const add = (tag, text) => {
+                    if (!items.some(i => i.text === text)) items.push({ tag, text });
+                };
+
                 const geral = form.exame['Geral'] || [];
                 const obsLower = (form.exameObs || '').toLowerCase();
                 const diagsLower = form.diagnosticos.join(' ').toLowerCase();
                 const tempVal = parseFloat((form.sv.temp || '').replace(',', '.'));
                 const spo2Val = parseFloat((form.sv.spo2 || '').replace(',', '.'));
+                const fcVal = parseFloat((form.sv.fc || '').replace(',', '.'));
+                const frVal = parseFloat((form.sv.fr || '').replace(',', '.'));
                 const hgtVal = parseFloat((form.sv.hgt || '').replace(',', '.'));
                 const evaVal = parseFloat((form.sv.eva || '').replace(',', '.'));
 
-                // Sinais Vitais
+                // 1. Sinais Vitais
                 if (!isNaN(tempVal) && tempVal >= 37.8) {
-                    list.add("Monitorar curva térmica rigorosamente, aplicar medidas físicas de resfriamento e administrar antitérmicos conforme prescrição médica.");
+                    add("Febre", "Monitorar curva térmica rigorosamente, aplicar medidas físicas de resfriamento e administrar antitérmicos conforme prescrição médica.");
                 }
                 if (!isNaN(tempVal) && tempVal > 0 && tempVal < 36.0) {
-                    list.add("Instituir medidas de aquecimento ativo/passivo (mantas térmicas/cobertores) e monitorar temperatura axilar.");
+                    add("Hipotermia", "Instituir medidas de aquecimento ativo/passivo (mantas térmicas/cobertores) e monitorar temperatura axilar.");
                 }
-                if (!isNaN(spo2Val) && spo2Val > 0 && spo2Val < 94) {
-                    list.add("Monitorar oximetria de pulso contínua, avaliar padrão respiratório e otimizar oxigenoterapia conforme prescrição.");
+                if ((!isNaN(spo2Val) && spo2Val > 0 && spo2Val < 94) || (!isNaN(frVal) && frVal > 22)) {
+                    add("Respiratório", "Monitorar oximetria de pulso contínua, avaliar padrão e esforço respiratório e otimizar oxigenoterapia conforme prescrição.");
+                }
+                if (!isNaN(fcVal) && (fcVal > 100 || (fcVal > 0 && fcVal < 55))) {
+                    add("Hemodinâmica", "Manter monitorização cardíaca contínua, avaliar perfusão periférica e comunicar alterações de ritmo ou frequência à equipe médica.");
                 }
                 if ((!isNaN(evaVal) && evaVal > 0) || diagsLower.includes('dor')) {
-                    list.add("Reavaliar escala de dor (EVA) periodicamente, aplicar medidas não farmacológicas de conforto e administrar analgesia conforme prescrição.");
+                    add("Dor / Conforto", "Reavaliar escala de dor (EVA) periodicamente, aplicar medidas não farmacológicas de conforto e administrar analgesia conforme prescrição.");
                 }
                 if ((!isNaN(hgtVal) && (hgtVal < 70 || hgtVal > 180)) || diagsLower.includes('glicemia')) {
-                    list.add("Realizar controle rigoroso de glicemia capilar conforme protocolo institucional e comunicar variações extremas.");
+                    add("Glicemia", "Realizar controle rigoroso de glicemia capilar conforme protocolo institucional e comunicar variações extremas.");
                 }
 
-                // Escalas Técnicas
-                if ((glasgowCalc.t > 0 && glasgowCalc.t <= 13) || geral.includes("Interação Reduzida") || geral.includes("Sonolento")) {
-                    list.add("Manter vigilância neurológica rigorosa, avaliando nível de consciência, reatividade pupilar e resposta motora.");
+                // 2. Escalas Técnicas
+                if ((glasgowCalc.t > 0 && glasgowCalc.t <= 14) || geral.includes("Interação Reduzida") || geral.includes("Sonolento")) {
+                    add("Neurológico", "Manter vigilância neurológica rigorosa, avaliando nível de consciência (Glasgow), reatividade pupilar e resposta motora.");
                 }
                 if ((bradenCalc.t > 0 && bradenCalc.t <= 18) || geral.includes("Pele Friável") || diagsLower.includes('pressão') || diagsLower.includes('pele')) {
-                    list.add("Manter medidas de prevenção de lesão por pressão, incluindo mudanças de decúbito 2/2h conforme tolerância clínica, alívio de proeminências ósseas e hidratação cutânea.");
+                    add("Braden / LPP", "Manter medidas de prevenção de lesão por pressão, incluindo mudanças de decúbito 2/2h conforme tolerância clínica, alívio de proeminências ósseas e hidratação cutânea.");
                 }
                 if ((morseCalc.t >= 25) || diagsLower.includes('queda')) {
-                    list.add("Manter medidas de prevenção de quedas (grades elevadas, leito travado e campainha ao alcance) e prevenção de eventos adversos.");
+                    add("Morse / Quedas", "Manter medidas de prevenção de quedas (grades elevadas, leito travado e campainha ao alcance) e prevenção de eventos adversos.");
+                }
+                if (fugulinCalc.t >= 24) {
+                    add("Fugulin", "Manter vigilância intensiva de enfermagem, assistência integral nas necessidades humanas básicas e monitorização multiparamétrica.");
                 }
 
-                // Exame Físico e Achados Clínicos
+                // 3. Exame Físico e Achados Clínicos
                 if (geral.includes("Dispnéico") || diagsLower.includes('respirat') || diagsLower.includes('gases')) {
-                    list.add("Avaliar ausculta pulmonar, frequência, ritmo e esforço respiratório, mantendo cabeceira elevada.");
+                    add("Padrão Resp.", "Avaliar ausculta pulmonar, frequência, ritmo e esforço respiratório, mantendo cabeceira elevada.");
                 }
                 if (geral.includes("Edema Periférico") || obsLower.includes("edema")) {
-                    list.add("Avaliar evolução de edema periférico, perfusão tissular distal e realizar controle rigoroso do balanço hídrico.");
+                    add("Edema / BH", "Avaliar evolução de edema periférico, perfusão tissular distal e realizar controle rigoroso do balanço hídrico.");
                 }
                 if (geral.includes("Pele Friável") || obsLower.includes("lesão") || obsLower.includes("lesao") || obsLower.includes("hematoma") || obsLower.includes("ferida") || obsLower.includes("úlcera") || obsLower.includes("ulcera")) {
-                    list.add("Avaliar e monitorar lesões cutâneas/hematomas quanto à extensão, aspecto, exsudato e sinais de infecção, realizando proteção local e evitando fricção ou trauma.");
+                    add("Pele / Lesões", "Avaliar e monitorar lesões cutâneas/hematomas quanto à extensão, aspecto, exsudato e sinais de infecção, realizando proteção local e evitando fricção ou trauma.");
                 }
                 if (obsLower.includes("rabdomi") || obsLower.includes("compartimental") || obsLower.includes("mialgia")) {
-                    list.add("Observar sinais de síndrome compartimental (dor desproporcional, aumento de tensão muscular e alterações neurovasculares) e monitorar alterações eletrolíticas/ECG.");
+                    add("Vigilância Muscular", "Observar sinais de síndrome compartimental (dor desproporcional, aumento de tensão muscular e alterações neurovasculares) e monitorar alterações eletrolíticas/ECG.");
                 }
                 if (geral.includes("Abdome Flácido") || obsLower.includes("abdome") || obsLower.includes("globoso") || obsLower.includes("distendido")) {
-                    list.add("Avaliar distensão e perímetro abdominal, ruídos hidroaéreos, aceitação alimentar e padrão de eliminação intestinal.");
+                    add("Gastrointestinal", "Avaliar distensão e perímetro abdominal, ruídos hidroaéreos, aceitação alimentar e padrão de eliminação intestinal.");
                 }
 
-                // Terapias e Infusões
+                // 4. Terapias e Infusões
                 if (form.terapias.includes("Em hemotransfusão (CHAD)")) {
-                    list.add("Acompanhar hemotransfusão conforme prescrição médica, monitorando sinais vitais e possíveis manifestações de reação transfusional.");
+                    add("Hemotransfusão", "Acompanhar hemotransfusão conforme prescrição médica, monitorando sinais vitais e possíveis manifestações de reação transfusional.");
                 }
                 if (form.terapias.includes("Em uso de DVA")) {
-                    list.add("Monitorar infusão contínua de drogas vasoativas (DVA) em bomba de infusão, avaliando pressão arterial, frequência cardíaca e perfusão periférica.");
+                    add("DVA", "Monitorar infusão contínua de drogas vasoativas (DVA) em bomba de infusão, avaliando pressão arterial, frequência cardíaca e perfusão periférica.");
                 }
                 if (form.terapias.includes("Sedação contínua")) {
-                    list.add("Avaliar nível de sedação (escala RASS), reflexos protetores de via aérea e realizar cuidados oculares.");
+                    add("Sedação", "Avaliar nível de sedação (escala RASS), reflexos protetores de via aérea e realizar cuidados oculares.");
                 }
                 if (form.terapias.includes("Dieta enteral contínua") || form.sondasDrenos.some(s => s.tipo.toUpperCase().includes("SNE"))) {
-                    list.add("Manter dieta enteral conforme prescrição em bomba de infusão com cabeceira elevada (30° a 45°), observando tolerância gastrointestinal e glicemia capilar.");
+                    add("Dieta Enteral", "Manter dieta enteral conforme prescrição em bomba de infusão com cabeceira elevada (30° a 45°), observando tolerância gastrointestinal e glicemia capilar.");
                 }
                 if (form.terapias.includes("Hidratação venosa contínua")) {
-                    list.add("Administrar hidratação venosa conforme prescrição médica, monitorando resposta clínica e balanço hídrico.");
+                    add("Hidratação", "Administrar hidratação venosa conforme prescrição médica, monitorando resposta clínica e balanço hídrico.");
                 }
 
-                // Invasivos e Drenos
+                // 5. Invasivos e Drenos
                 form.vasculares.forEach(v => {
                     const tUp = (v.tipo || '').toUpperCase();
                     if (tUp.includes("CVC") || tUp.includes("PICC") || tUp.includes("PAI")) {
-                        list.add(`Manter cuidados com ${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}, avaliando sítio de inserção, integridade do curativo estéril, conexões e permeabilidade dos lúmens.`);
+                        add("CVC / Invasivo", `Manter cuidados com ${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}, avaliando sítio de inserção, integridade do curativo estéril, conexões e permeabilidade dos lúmens.`);
                     } else {
-                        list.add(`Avaliar condições do acesso venoso (${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}), observando fixação, permeabilidade e sinais flogísticos.`);
+                        add("Acesso Venoso", `Avaliar condições do acesso venoso (${v.tipo}${v.sitio ? ' em ' + v.sitio : ''}), observando fixação, permeabilidade e sinais flogísticos.`);
                     }
                 });
 
                 form.viasAereas.forEach(va => {
                     const vaUp = (va.tipo || '').toUpperCase();
                     if (vaUp.includes("TQT") || vaUp.includes("TOT") || vaUp.includes("VMI")) {
-                        list.add(`Manter vigilância da adaptação à ventilação mecânica e cuidados com ${va.tipo}, incluindo checagem de fixação, pressão de cuff e aspiração conforme necessidade.`);
+                        add("VMI / Via Aérea", `Manter vigilância da adaptação à ventilação mecânica e cuidados com ${va.tipo}, incluindo checagem de fixação, pressão de cuff e aspiração conforme necessidade.`);
                     } else {
-                        list.add(`Manter cuidados e umidificação com dispositivo de oxigenoterapia (${va.tipo}), avaliando integridade cutânea local.`);
+                        add("Oxigenoterapia", `Manter cuidados e umidificação com dispositivo de oxigenoterapia (${va.tipo}), avaliando integridade cutânea local.`);
                     }
                 });
 
                 form.sondasDrenos.forEach(sd => {
                     if (!(sd.tipo || '').toUpperCase().includes("SNE")) {
-                        list.add(`Manter cuidados com ${sd.tipo}, observando permeabilidade, fixação, aspecto e volume drenado.`);
+                        add("Drenos / Sondas", `Manter cuidados com ${sd.tipo}, observando permeabilidade, fixação, aspecto e volume drenado.`);
                     }
                 });
 
-                // Eliminações Fisiológicas
+                // 6. Eliminações Fisiológicas
                 if (form.elims.vesical.via === 'SVD' || form.elims.vesical.via === 'SVA' || form.elims.vesical.via === 'Urostomia') {
-                    list.add(`Manter cuidados com dispositivo urinário (${form.elims.vesical.via}), garantindo fixação adequada, sistema fechado abaixo do nível da bexiga e higiene íntima rigorosa.`);
+                    add("Sonda Vesical", `Manter cuidados com dispositivo urinário (${form.elims.vesical.via}), garantindo fixação adequada, sistema fechado abaixo do nível da bexiga e higiene íntima rigorosa.`);
                 }
                 if (form.elims.vesical.volume || form.elims.vesical.ml || ['Concentrado', 'Colúrico', 'Hematúrico', 'Piúrico'].includes(form.elims.vesical.aspecto)) {
-                    list.add("Realizar controle rigoroso da diurese e do balanço hídrico, observando características da urina, alterações de coloração e redução do débito urinário.");
+                    add("Diurese / BH", "Realizar controle rigoroso da diurese e do balanço hídrico, observando características da urina, alterações de coloração e redução do débito urinário.");
                 }
                 if (['Líquida/Diarreia', 'Melena', 'Enterorragia'].includes(form.elims.intestinal.aspecto) || form.elims.intestinal.via === 'Fralda') {
-                    list.add("Monitorar frequência e aspecto das evacuações, realizando higiene íntima pronta e proteção da pele perianal.");
+                    add("Intestinal / Pele", "Monitorar frequência e aspecto das evacuações, realizando higiene íntima pronta e proteção da pele perianal.");
                 }
                 if ((form.elims.intestinal.freq || '').includes('Ausente')) {
-                    list.add("Acompanhar padrão de eliminação intestinal, ruídos hidroaéreos e distensão abdominal.");
+                    add("Eliminação Int.", "Acompanhar padrão de eliminação intestinal, ruídos hidroaéreos e distensão abdominal.");
                 }
 
-                return Array.from(list);
-            }, [form, glasgowCalc, bradenCalc, morseCalc]);
+                return items;
+            }, [form, glasgowCalc, bradenCalc, morseCalc, fugulinCalc]);
 
             const condutasGeraisList = [
                 "Manter monitorização hemodinâmica, respiratória e neurológica contínua.",
@@ -590,7 +602,7 @@
             const applyAllSuggestions = () => {
                 setForm(prev => ({
                     ...prev,
-                    condutas: Array.from(new Set([...prev.condutas, ...smartSuggestions]))
+                    condutas: Array.from(new Set([...prev.condutas, ...smartSuggestions.map(s => s.text)]))
                 }));
             };
 
@@ -743,8 +755,8 @@
                                             {id: 'S', label: 'Subjetivo (S)'},
                                             {id: 'O', label: 'Objetivo (O)'},
                                             {id: 'I', label: 'Diag. NANDA (I)'},
-                                            {id: 'C', label: 'Conduta (C)'}
-                                        ].map(s=><button key={s.id} onClick={()=>setActiveSection(s.id)} className={`flex-1 min-w-[110px] py-2.5 rounded-lg text-[11px] font-black transition-all ${activeSection===s.id?'bg-emerald-600 text-white shadow-md':'text-slate-400 hover:bg-slate-700/50 hover:text-slate-300'}`}>{s.label}</button>)}
+                                            {id: 'C', label: `Conduta (C)${smartSuggestions.length > 0 ? ` • ${smartSuggestions.length}` : ''}`}
+                                        ].map(s=><button key={s.id} onClick={()=>setActiveSection(s.id)} className={`flex-1 min-w-[115px] py-2.5 rounded-lg text-[11px] font-black transition-all ${activeSection===s.id?'bg-emerald-600 text-white shadow-md':'text-slate-400 hover:bg-slate-700/50 hover:text-slate-300'}`}>{s.label}</button>)}
                                     </div>
                                     
                                     {activeSection === 'S' && (
@@ -858,25 +870,32 @@
                                     )}
                                     {activeSection === 'C' && (
                                         <div className="space-y-6">
-                                            {smartSuggestions.length > 0 && (
-                                                <div className="bg-slate-800 p-5 rounded-xl border border-emerald-500/40 shadow-sm">
-                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
-                                                        <div className="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
-                                                            <Icons.Sparkles size={16}/> Sugestões Inteligentes ({smartSuggestions.length} encontradas pelo Exame Objetivo)
-                                                        </div>
-                                                        <button onClick={applyAllSuggestions} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shadow">
-                                                            + Aplicar Todas
-                                                        </button>
+                                            <div className="bg-slate-800 p-5 rounded-xl border border-emerald-500/40 shadow-sm">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
+                                                    <div className="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
+                                                        <Icons.Sparkles size={16}/> Sugestões Inteligentes Baseadas no Objetivo (O) {smartSuggestions.length > 0 && `(${smartSuggestions.length})`}
                                                     </div>
+                                                    {smartSuggestions.length > 0 && (
+                                                        <button onClick={applyAllSuggestions} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shadow">
+                                                            + Aplicar Todas ({smartSuggestions.length})
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {smartSuggestions.length > 0 ? (
                                                     <div className="flex flex-col gap-2">
-                                                        {smartSuggestions.map(c => (
-                                                            <button key={c} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(c)?p.condutas.filter(x=>x!==c):[...p.condutas,c]}))} className={`text-left px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all border ${form.condutas.includes(c)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-800'}`}>
-                                                                {form.condutas.includes(c) ? '✓ ' : '+ '}{c}
+                                                        {smartSuggestions.map(item => (
+                                                            <button key={item.text} onClick={()=>setForm(p=>({...p,condutas:p.condutas.includes(item.text)?p.condutas.filter(x=>x!==item.text):[...p.condutas,item.text]}))} className={`text-left px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all border flex items-start gap-2.5 ${form.condutas.includes(item.text)?'bg-emerald-600 border-emerald-500 text-white shadow-md':'bg-slate-900 border-slate-700 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-800'}`}>
+                                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 mt-0.5 ${form.condutas.includes(item.text)?'bg-emerald-800 text-emerald-100':'bg-slate-800 text-emerald-400 border border-slate-700'}`}>{item.tag}</span>
+                                                                <span className="leading-snug">{item.text}</span>
                                                             </button>
                                                         ))}
                                                     </div>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <div className="text-xs text-slate-400 bg-slate-900/80 border border-slate-700/80 rounded-lg p-4 leading-relaxed">
+                                                        Preencha os achados na aba <strong className="text-emerald-400">Objetivo (O)</strong> (sinais vitais, escalas de Glasgow/Braden/Morse/Fugulin, exame físico, terapias, eliminações ou dispositivos invasivos) para gerar prescrições personalizadas automaticamente aqui.
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
                                                 <div className="text-[10px] font-bold uppercase text-blue-400 mb-4">Condutas Gerais e Rotina Institucional</div>
