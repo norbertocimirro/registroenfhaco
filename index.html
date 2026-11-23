@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GT SAE HACO - Enterprise Suite</title>
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; margin: 0; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .animate-fade { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { background-color: #ffffff !important; color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+            .print-bg-white { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+            .print-text-dark { color: #0f172a !important; }
+            .print-text-muted { color: #64748b !important; }
+            .print-break-avoid { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
+            canvas { min-height: 250px !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJJX95TGZD9neKRWuu8HjedZKKRie5Uxw",
+            authDomain: "gtsae-haco.firebaseapp.com",
+            projectId: "gtsae-haco",
+            storageBucket: "gtsae-haco.firebasestorage.app",
+            messagingSenderId: "177895085134",
+            appId: "1:177895085134:web:40731911ad0a47bf7edf1f"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        window.dbFS = firebase.firestore();
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = 'Inter';
+    </script>
+
+    <!-- Módulos Separados -->
+    <script type="text/babel" src="dados.js"></script>
+    <script type="text/babel" src="calculadoras.js"></script>
+    <script type="text/babel" src="soic.js"></script>
+    <script type="text/babel" src="app.js"></script>
+</body>
+</html>
