@@ -54,12 +54,29 @@
         window.dbFS = firebase.firestore();
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = 'Inter';
+
+        // Diagnóstico automático caso a tela não monte em 3 segundos
+        setTimeout(() => {
+            const root = document.getElementById('root');
+            if (!root || root.innerHTML.trim() === '') {
+                const isLocalFile = window.location.protocol === 'file:';
+                root.innerHTML = `
+                    <div style="max-width:600px;margin:60px auto;padding:24px;background:#1e293b;border:1px solid #ef4444;border-radius:12px;color:#f8fafc;font-family:Inter,sans-serif;">
+                        <h2 style="color:#f87171;margin-top:0;font-size:18px;">O sistema não conseguiu carregar os módulos</h2>
+                        ${isLocalFile 
+                            ? '<p style="font-size:14px;line-height:1.6;">Você abriu o <b>index.html</b> diretamente do computador (<code>file://</code>). O navegador bloqueia o carregamento de arquivos <code>.js</code> separados fora de um servidor.</p><p style="font-size:13px;color:#94a3b8;">Acesse pelo link do Vercel ou rode <code>python3 -m http.server 8000</code> na pasta do projeto.</p>'
+                            : '<p style="font-size:14px;line-height:1.6;">Verifique no GitHub se os 4 arquivos estão na mesma pasta do <code>index.html</code> com nomes exatamente em minúsculo: <b>dados.js</b>, <b>calculadoras.js</b>, <b>soic.js</b> e <b>app.js</b>.</p>'
+                        }
+                    </div>
+                `;
+            }
+        }, 3000);
     </script>
 
     <!-- Módulos Separados -->
-    <script type="text/babel" src="dados.js"></script>
-    <script type="text/babel" src="calculadoras.js"></script>
-    <script type="text/babel" src="soic.js"></script>
-    <script type="text/babel" src="app.js"></script>
+    <script type="text/babel" data-presets="react" src="./dados.js"></script>
+    <script type="text/babel" data-presets="react" src="./calculadoras.js"></script>
+    <script type="text/babel" data-presets="react" src="./soic.js"></script>
+    <script type="text/babel" data-presets="react" src="./app.js"></script>
 </body>
 </html>
