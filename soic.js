@@ -236,6 +236,7 @@ const SoicApp = () => {
                         <Icons.Trash size={14}/> Limpar
                     </button>
                 </div>
+
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
                     {activeTab === 'ADMISSAO' && (
                         <div className="space-y-6">
@@ -368,6 +369,7 @@ const SoicApp = () => {
                                     </div>
                                 </div>
                             )}
+
                             {activeSection === 'I' && (
                                 <div className="space-y-4">
                                     <input className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white outline-none focus:border-emerald-500 mb-4 transition-colors" placeholder="Buscar diagnóstico NANDA-I..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>
@@ -381,6 +383,7 @@ const SoicApp = () => {
                                     </div>
                                 </div>
                             )}
+
                             {activeSection === 'C' && (
                                 <div className="space-y-6">
                                     <div className="bg-slate-800 p-5 rounded-xl border border-emerald-500/40 shadow-sm">
@@ -422,15 +425,17 @@ const SoicApp = () => {
                                 </div>
                             )}
                         </div>
-                    </div>
-                    
-                    <div className="hidden lg:flex w-[400px] xl:w-[450px] bg-slate-900 border border-slate-800 rounded-xl flex-col overflow-hidden shadow-2xl">
-                        <div className="p-4 border-b border-slate-800 bg-slate-800 flex justify-between items-center"><div className="text-[10px] font-black uppercase text-emerald-400 tracking-widest flex items-center gap-2">Terminal AGHUse</div></div>
-                        <div className="flex-1 p-4 overflow-hidden flex flex-col bg-slate-950">
-                            <pre className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 text-[11px] font-mono text-emerald-400 overflow-y-auto custom-scrollbar whitespace-pre-wrap select-all leading-loose">{generateText()}</pre>
-                            <button type="button" onClick={copyAghuse} className={`w-full py-4 mt-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-colors flex justify-center items-center gap-2 ${copySuccess?'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50':'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'}`}>{copySuccess?"Copiado para a Área de Transferência!":"Copiar Evolução"}</button>
-                        </div>
-                    </div>
+                    )}
                 </div>
-            );
-        };
+            </div>
+            
+            <div className="hidden lg:flex w-[400px] xl:w-[450px] bg-slate-900 border border-slate-800 rounded-xl flex-col overflow-hidden shadow-2xl">
+                <div className="p-4 border-b border-slate-800 bg-slate-800 flex justify-between items-center"><div className="text-[10px] font-black uppercase text-emerald-400 tracking-widest flex items-center gap-2">Terminal AGHUse</div></div>
+                <div className="flex-1 p-4 overflow-hidden flex flex-col bg-slate-950">
+                    <pre className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 text-[11px] font-mono text-emerald-400 overflow-y-auto custom-scrollbar whitespace-pre-wrap select-all leading-loose">{generateText()}</pre>
+                    <button type="button" onClick={copyAghuse} className={`w-full py-4 mt-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-colors flex justify-center items-center gap-2 ${copySuccess?'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50':'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'}`}>{copySuccess?"Copiado para a Área de Transferência!":"Copiar Evolução"}</button>
+                </div>
+            </div>
+        </div>
+    );
+};
